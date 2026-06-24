@@ -271,7 +271,6 @@ export default function AppRoutes() {
       <Route path="kesehatan/patients" element={<Guarded perm={P.KESEHATAN_PATIENT_VIEW}><TenagaKesehatanPatientList /></Guarded>} />
       <Route path="kesehatan/patients/:id/medical-record" element={<Guarded perm={P.KESEHATAN_PATIENT_VIEW}><TenagaKesehatanPatientRecord /></Guarded>} />
       <Route path="kesehatan/medical-records" element={<Guarded perm={P.KESEHATAN_RECORD_VIEW}><AdminTenagaKesehatanMedicalRecords /></Guarded>} />
-      <Route path="kesehatan/claims" element={<Guarded perm={P.KESEHATAN_CLAIM_VIEW}><InsuranceReview /></Guarded>} />
       <Route path="kesehatan/referrals" element={<Guarded perm={P.KESEHATAN_REFERRAL_VIEW}><TenagaKesehatanReferral /></Guarded>} />
       <Route path="kesehatan/bap" element={<Guarded perm={P.KESEHATAN_BAP_VIEW}><BAPManagement /></Guarded>} />
       <Route path="kesehatan/reports" element={<Guarded perm={P.KESEHATAN_REPORT_VIEW}><ReportsPage /></Guarded>} />

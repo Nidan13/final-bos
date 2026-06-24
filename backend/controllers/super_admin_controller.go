@@ -104,7 +104,6 @@ var rbacPermissionCatalog = []fiber.Map{
 		"health.medical_records.view", "health.medical_records.create", "health.medical_records.update", "health.medical_records.delete",
 		"health.bap.view", "health.bap.create", "health.bap.update", "health.bap.delete",
 		"health.reports.view", "health.reports.create", "health.reports.update", "health.reports.delete",
-		"health_claims.view",
 		"faculty_health.view", "faculty_health.delete",
 		"faculty.counseling.view", "faculty.counseling.manage",
 	}},
