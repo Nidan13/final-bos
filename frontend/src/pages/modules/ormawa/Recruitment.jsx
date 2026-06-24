@@ -127,6 +127,7 @@ export default function Recruitment() {
   }, [ormawaId])
 
   const fetchRecruitmentSettings = useCallback(async () => {
+    if (!ormawaId || ormawaId === 'null') return;
     setSettingsLoading(true)
     try {
       const data = await fetchWithAuth(`${API_BASE_URL}/ormawa/settings/${ormawaId}`)
@@ -160,7 +161,7 @@ export default function Recruitment() {
   }, [])
 
   useEffect(() => {
-    if (ormawaId) {
+    if (ormawaId && String(ormawaId) !== 'null') {
       fetchApplicants()
       fetchFormFields()
       fetchRecruitmentSettings()

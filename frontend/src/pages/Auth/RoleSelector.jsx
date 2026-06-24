@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
-  Shield, Building2, Brain, HeartPulse, Users, GraduationCap, 
-  BookOpen, Sparkles, HandHelping, User, ChevronRight, Loader2, ArrowLeft 
+import {
+  Shield, Building2, Brain, HeartPulse, Users, GraduationCap,
+  BookOpen, Sparkles, HandHelping, User, ChevronRight, Loader2, ArrowLeft
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import api from '../../lib/axios';
@@ -75,7 +75,7 @@ export default function RoleSelector({ data, onBack, onError }) {
   };
 
   return (
-    <motion.div 
+    <motion.div
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.4, ease: "easeOut" }}
@@ -87,7 +87,7 @@ export default function RoleSelector({ data, onBack, onError }) {
         className="flex items-center gap-2 text-slate-500 hover:text-[var(--theme-primary)] font-semibold text-sm mb-6 group transition-colors"
       >
         <div className="p-1.5 rounded-full bg-slate-100 group-hover:bg-[var(--theme-primary)]/10 transition-colors">
-           <ArrowLeft size={16} className="group-hover:-translate-x-0.5 transition-transform" />
+          <ArrowLeft size={16} className="group-hover:-translate-x-0.5 transition-transform" />
         </div>
         Kembali ke Login
       </button>
@@ -109,7 +109,7 @@ export default function RoleSelector({ data, onBack, onError }) {
       </div>
 
       {/* Role Cards */}
-      <motion.div 
+      <motion.div
         variants={containerVariants}
         initial="hidden"
         animate="show"
@@ -129,14 +129,13 @@ export default function RoleSelector({ data, onBack, onError }) {
               key={role.role}
               onClick={() => handleSelectRole(role)}
               disabled={isDisabled || isLoading}
-              className={`w-full group relative overflow-hidden rounded-2xl border-2 transition-all duration-300 ease-out text-left flex flex-col ${
-                isDisabled ? 'opacity-50 cursor-not-allowed grayscale-[0.5]' : 'cursor-pointer'
-              }`}
+              className={`w-full group relative overflow-hidden rounded-2xl border-2 transition-all duration-300 ease-out text-left flex flex-col ${isDisabled ? 'opacity-50 cursor-not-allowed grayscale-[0.5]' : 'cursor-pointer'
+                }`}
               style={{
                 borderColor: isLoading ? roleColor : 'transparent',
                 backgroundColor: isLoading ? `${roleColor}08` : '#ffffff',
-                boxShadow: isLoading 
-                  ? `0 0 0 4px ${roleColor}15` 
+                boxShadow: isLoading
+                  ? `0 0 0 4px ${roleColor}15`
                   : '0 4px 15px rgba(0,0,0,0.03), 0 1px 3px rgba(0,0,0,0.05)',
               }}
             >
@@ -144,10 +143,10 @@ export default function RoleSelector({ data, onBack, onError }) {
               {!isLoading && (
                 <div className="absolute inset-0 rounded-2xl border-2 border-slate-100 group-hover:border-transparent transition-colors duration-300 pointer-events-none z-10" />
               )}
-              
+
               {/* Hover Border Gradient */}
               {!isDisabled && !isLoading && (
-                <div 
+                <div
                   className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-10"
                   style={{
                     padding: '2px',
@@ -160,7 +159,7 @@ export default function RoleSelector({ data, onBack, onError }) {
               )}
 
               {/* Hover Background */}
-              <div 
+              <div
                 className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 z-0"
                 style={{ background: `linear-gradient(120deg, ${roleColor}08 0%, transparent 100%)` }}
               />
@@ -169,12 +168,12 @@ export default function RoleSelector({ data, onBack, onError }) {
               <div className="absolute -right-6 -top-6 opacity-[0.03] group-hover:opacity-[0.06] transition-opacity duration-500 transform group-hover:scale-110 group-hover:rotate-12 pointer-events-none z-0">
                 <IconComponent size={120} />
               </div>
-              
+
               <div className="relative z-20 flex items-center gap-4 p-5">
                 {/* Icon Container */}
-                <div 
+                <div
                   className="w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0 transition-all duration-300 shadow-sm"
-                  style={{ 
+                  style={{
                     background: `linear-gradient(135deg, ${roleColor}15, ${roleColor}05)`,
                     border: `1px solid ${roleColor}20`
                   }}
@@ -182,11 +181,11 @@ export default function RoleSelector({ data, onBack, onError }) {
                   {isLoading ? (
                     <Loader2 size={26} className="animate-spin" style={{ color: roleColor }} />
                   ) : (
-                    <IconComponent 
-                      size={26} 
-                      style={{ color: roleColor }} 
+                    <IconComponent
+                      size={26}
+                      style={{ color: roleColor }}
                       className="transition-transform duration-300 group-hover:scale-110"
-                      strokeWidth={2} 
+                      strokeWidth={2}
                     />
                   )}
                 </div>
@@ -210,8 +209,8 @@ export default function RoleSelector({ data, onBack, onError }) {
 
                 {/* Arrow indicator */}
                 <div className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center bg-slate-50 group-hover:bg-white group-hover:shadow-md transition-all duration-300 border border-transparent group-hover:border-slate-100">
-                  <ChevronRight 
-                    size={18} 
+                  <ChevronRight
+                    size={18}
                     className="text-slate-400 group-hover:text-slate-700 transition-transform duration-300 group-hover:translate-x-0.5"
                   />
                 </div>
@@ -222,7 +221,7 @@ export default function RoleSelector({ data, onBack, onError }) {
       </motion.div>
 
       {/* Footer hint */}
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.5, duration: 0.5 }}

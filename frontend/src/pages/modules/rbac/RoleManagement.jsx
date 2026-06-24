@@ -13,6 +13,7 @@ import { adminService } from '@/services/api'
 import { PageContent, PageCard, PageCardHeader } from '@/components/ui/page'
 import { DashboardHero } from '@/components/ui/dashboard'
 import { DeleteConfirmModal } from '@/components/ui/DeleteConfirmModal'
+import { DialogModal, ModalCancelButton } from '@/components/ui/DialogModal'
 import { usePermission } from '@/hooks/usePermission'
 import { migratePermission } from '@/config/permissions'
 
@@ -156,26 +157,7 @@ const getFeatureLabel = (prefix) => {
     "kencana.settings": "Kencana (Admin): Pengaturan",
     "kencana.faculty": "Fakultas: Monitor Kencana",
 
-    // ═══════════════════════════════════════════════════════
-    // MODULE: Portal Mahasiswa
-    // ═══════════════════════════════════════════════════════
-    "student": "Mahasiswa: Portal Utama",
-    "student.dashboard": "Mahasiswa: Dashboard",
-    "student.profile": "Mahasiswa: Profil",
-    "student.kencana": "Mahasiswa: Kencana PKKMB",
-    "student_kencana": "Mahasiswa: Kencana PKKMB",
-    "student.achievement": "Mahasiswa: Prestasi",
-    "student.organisasi": "Mahasiswa: Organisasi",
-    "student.organizations": "Mahasiswa: Organisasi",
-    "student.health": "Mahasiswa: Kesehatan",
-    "student.health.records": "Mahasiswa: Rekam Medis",
-    "student.health.bookings": "Mahasiswa: Jadwal Kunjungan",
-    "student.counseling": "Mahasiswa: Konseling",
-    "student.scholarship": "Mahasiswa: Beasiswa",
-    "student.voice": "Mahasiswa: Suara Mahasiswa",
-    "student.aspirations": "Mahasiswa: Aspirasi",
-    "student.insurance": "Mahasiswa: Asuransi",
-    "student.presensi": "Mahasiswa: Presensi Kegiatan",
+
 
     // (Reuse existing prefixes — these will be grouped under
     //  the "Integrasi" tab when they appear in that catalog module)
@@ -186,6 +168,20 @@ const getFeatureLabel = (prefix) => {
     let s = part.replace(/_/g, ' ');
     return s.charAt(0).toUpperCase() + s.slice(1);
   }).join(' › ');
+};
+
+const getStrictDomain = (perm) => {
+  if (!perm) return null;
+  if (perm.startsWith('ormawa')) return 'Ormawa';
+  if (perm.startsWith('kencana')) return 'Kencana PKKMB';
+  if (perm.startsWith('faculty.') || perm.startsWith('faculty_') || perm.startsWith('prodi_')) return 'Fakultas';
+  return null;
+};
+
+const isSuperAdminPerm = (perm) => {
+  if (perm === '*') return true;
+  if (perm.startsWith('admin') || perm.startsWith('system') || perm.startsWith('rbac')) return true;
+  return false;
 };
 
 const groupPermissionsByFeature = (items) => {
@@ -217,6 +213,9 @@ export default function RoleManagement() {
   const [roles, setRoles] = useState([]);
   const [permissionCatalog, setPermissionCatalog] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  const [conflictModalOpen, setConflictModalOpen] = useState(false);
+  const [conflictMessage, setConflictMessage] = useState('');
 
   const [viewState, setViewState] = useState('list'); // 'list' or 'form'
   const [editingRole, setEditingRole] = useState(null);
@@ -257,7 +256,12 @@ export default function RoleManagement() {
                    !lower.includes('profile') &&
                    p !== '*';
           })
-        })).filter(module => module.items.length > 0);
+        })).filter(module => {
+          if (!module.items || module.items.length === 0) return false;
+          const modName = (module.module || '').toLowerCase();
+          if (modName.includes('portal mahasiswa') || modName === 'mahasiswa') return false;
+          return true;
+        });
 
         setPermissionCatalog(migratedCatalog);
         if (migratedCatalog.length > 0 && !activeTab) {
@@ -362,58 +366,57 @@ export default function RoleManagement() {
     }
   };
 
-  const togglePermission = (perm) => {
-    setFormPermissions(prev => {
-      const isChecking = !prev.includes(perm);
-      const lastDot = perm.lastIndexOf('.');
-      let prefix = perm;
-      let suffix = '';
-
-      if (lastDot !== -1) {
-        prefix = perm.substring(0, lastDot);
-        suffix = perm.substring(lastDot + 1);
-      } else {
-        // Fallback for permissions without dots
-        const parts = perm.split('_');
-        if (parts.length > 1) {
-          suffix = parts.pop();
-          prefix = parts.join('_');
-        }
-      }
-
-      if (isChecking) {
-        const newSet = new Set(prev);
-        newSet.add(perm);
-
-        // If checking a non-view permission (create, update, delete), auto-check 'view'
-        if (suffix !== 'view' && prefix) {
-          const viewPerm = perm.includes('.') ? `${prefix}.view` : `${prefix}_view`;
-          newSet.add(viewPerm);
-        }
-        return Array.from(newSet);
-      } else {
-        let newArray = prev.filter(p => p !== perm);
-
-        // If unchecking 'view', auto-uncheck all actions under the same prefix
-        if (suffix === 'view' && prefix) {
-          newArray = newArray.filter(p => {
-            const pLastDot = p.lastIndexOf('.');
-            let pPrefix = p;
-            if (pLastDot !== -1) {
-              pPrefix = p.substring(0, pLastDot);
-            } else {
-              const pParts = p.split('_');
-              if (pParts.length > 1) {
-                pParts.pop();
-                pPrefix = pParts.join('_');
-              }
-            }
-            return pPrefix !== prefix;
-          });
-        }
-        return newArray;
+  const handlePermissionsChange = (keysToAdd = [], keysToRemove = []) => {
+    let nextPerms = formPermissions.filter(p => !keysToRemove.includes(p));
+    
+    keysToAdd.forEach(k => {
+      if (!nextPerms.includes(k)) nextPerms.push(k);
+      
+      const lastDot = k.lastIndexOf('.');
+      let prefix = k, suffix = '';
+      if (lastDot !== -1) { prefix = k.substring(0, lastDot); suffix = k.substring(lastDot + 1); }
+      else { const parts = k.split('_'); if (parts.length > 1) { suffix = parts.pop(); prefix = parts.join('_'); } }
+      
+      if (suffix !== 'view' && prefix && !keysToRemove.includes(k)) {
+        const viewPerm = k.includes('.') ? `${prefix}.view` : `${prefix}_view`;
+        if (!nextPerms.includes(viewPerm)) nextPerms.push(viewPerm);
       }
     });
+
+    keysToRemove.forEach(k => {
+      const lastDot = k.lastIndexOf('.');
+      let prefix = k, suffix = '';
+      if (lastDot !== -1) { prefix = k.substring(0, lastDot); suffix = k.substring(lastDot + 1); }
+      else { const parts = k.split('_'); if (parts.length > 1) { suffix = parts.pop(); prefix = parts.join('_'); } }
+
+      if (suffix === 'view' && prefix) {
+        nextPerms = nextPerms.filter(p => {
+          const pLastDot = p.lastIndexOf('.');
+          let pPrefix = p;
+          if (pLastDot !== -1) pPrefix = p.substring(0, pLastDot);
+          else { const pParts = p.split('_'); if (pParts.length > 1) { pParts.pop(); pPrefix = pParts.join('_'); } }
+          return pPrefix !== prefix;
+        });
+      }
+    });
+
+    // Check for Domain Conflict
+    const domains = new Set();
+    let hasSuperAdmin = false;
+    
+    nextPerms.forEach(p => {
+      if (isSuperAdminPerm(p)) hasSuperAdmin = true;
+      const d = getStrictDomain(p);
+      if (d) domains.add(d);
+    });
+
+    if (domains.size > 1 && !hasSuperAdmin) {
+      setConflictMessage(`Hak akses tidak dapat digabungkan! Centang akses Superadmin terlebih dahulu jika ingin menggabungkan fitur antar entitas.`);
+      setConflictModalOpen(true);
+      return;
+    }
+
+    setFormPermissions(nextPerms);
   };
 
   const filteredCatalog = useMemo(() => {
@@ -491,14 +494,14 @@ export default function RoleManagement() {
               </div>
 
               {/* Horizontal Tabs */}
-              <div className="flex overflow-x-auto bg-slate-100 p-1.5 rounded-lg mb-6 gap-1 border border-slate-200 shadow-inner" style={{ scrollbarWidth: 'thin' }}>
+              <div className="flex flex-wrap bg-slate-100/80 p-1.5 rounded-xl mb-6 gap-1.5 border border-slate-200/60 shadow-inner">
                 {filteredCatalog.map(group => (
                   <button
                     key={group.module}
                     onClick={() => setActiveTab(group.module)}
-                    className={`whitespace-nowrap px-4 py-2 font-medium text-sm transition-all rounded-md ${activeTab === group.module
-                      ? 'bg-white text-slate-800 shadow-sm border border-slate-200/80'
-                      : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/60'
+                    className={`px-4 py-2 font-bold text-[13px] transition-all rounded-lg flex-1 md:flex-none text-center ${activeTab === group.module
+                      ? 'bg-white text-bku-primary shadow-sm border border-slate-200/50 ring-1 ring-black/5'
+                      : 'text-slate-500 hover:text-slate-800 hover:bg-slate-200/60'
                       }`}
                   >
                     {group.module}
@@ -529,9 +532,9 @@ export default function RoleManagement() {
                                 const keys = group.permissions.map(p => p.key);
                                 const allSelected = keys.every(key => formPermissions.includes(key) || formPermissions.includes('*'));
                                 if (allSelected) {
-                                  setFormPermissions(prev => prev.filter(k => !keys.includes(k)));
+                                  handlePermissionsChange([], keys);
                                 } else {
-                                  setFormPermissions(prev => Array.from(new Set([...prev, ...keys])));
+                                  handlePermissionsChange(keys, []);
                                 }
                               }}
                               className="text-[10px] font-black uppercase tracking-widest text-bku-primary hover:text-bku-primary/80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer flex items-center gap-1"
@@ -554,7 +557,10 @@ export default function RoleManagement() {
                                       <input
                                         type="checkbox"
                                         checked={isChecked}
-                                        onChange={() => togglePermission(perm)}
+                                        onChange={() => {
+                                          if (isChecked) handlePermissionsChange([], [perm]);
+                                          else handlePermissionsChange([perm], []);
+                                        }}
                                         disabled={formPermissions.includes('*') && perm !== '*'}
                                         className="peer sr-only"
                                       />
@@ -592,6 +598,22 @@ export default function RoleManagement() {
             </CardContent>
           </Card>
         </div>
+
+        <DialogModal
+          open={conflictModalOpen}
+          onOpenChange={setConflictModalOpen}
+          title="Konflik Hak Akses"
+          subtitle="Tindakan Ditolak"
+          icon="warning"
+          description={conflictMessage}
+          maxWidth="max-w-sm"
+          bodyClassName="hidden"
+          footer={
+            <ModalCancelButton onClick={() => setConflictModalOpen(false)}>
+              Tutup
+            </ModalCancelButton>
+          }
+        />
       </PageContent>
     );
   }

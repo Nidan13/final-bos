@@ -112,7 +112,7 @@ export default function ProdiPage() {
       let activeFacultyID = faculties.length > 0 ? faculties[0].ID : null;
       if (!activeFacultyID) {
         try {
-          const facRes = await api.get('/app/dashboard/faculties');
+          const facRes = await api.get('/faculty/faculties');
           const facList = toArray(facRes);
           if (facList.length > 0) {
             activeFacultyID = facList[0].ID;
@@ -163,7 +163,7 @@ export default function ProdiPage() {
         const list = toArray(res)
         setFaculties(list)
       } else {
-        const res = await api.get('/app/dashboard/faculties')
+        const res = await api.get('/faculty/faculties')
         const list = toArray(res)
         setFaculties(list)
       }

@@ -266,11 +266,6 @@ export default function UserManagement() {
     return form.Role ? form.Role.split(',').map(r => r.trim()).filter(Boolean) : [];
   }, [form.Role]);
 
-  const showRoleScopeSelect = useMemo(() => {
-    if (formRoles.includes('super_admin') || formRoles.includes('student')) return false;
-    return true;
-  }, [formRoles]);
-
   const isCustomSuperAdmin = useMemo(() => {
     return formRoles.some(r => {
       if (r === 'super_admin' || r === 'superadmin') return true;
@@ -284,7 +279,6 @@ export default function UserManagement() {
 
   const showFakultasSelect = useMemo(() => {
     if (isCustomSuperAdmin) return false;
-    if (showRoleScopeSelect && (form.RoleScopeType === 'faculty' || form.RoleScopeType === 'prodi')) return true;
     return formRoles.some(r => {
       if (['faculty_admin', 'prodi_admin', 'student', 'ormawa_admin', 'ormawa', 'kencana_fakultas'].includes(r)) return true;
       const rbacRole = rbacRoles.find(role => role.key === r);
@@ -297,11 +291,10 @@ export default function UserManagement() {
       }
       return false;
     });
-  }, [formRoles, form.RoleScopeType, showRoleScopeSelect, rbacRoles]);
+  }, [formRoles, rbacRoles]);
 
   const showProdiSelect = useMemo(() => {
     if (isCustomSuperAdmin) return false;
-    if (showRoleScopeSelect && form.RoleScopeType === 'prodi') return true;
     return formRoles.some(r => {
       if (['student', 'ormawa_admin', 'ormawa', 'prodi_admin'].includes(r)) return true;
       const rbacRole = rbacRoles.find(role => role.key === r);
@@ -310,7 +303,7 @@ export default function UserManagement() {
       }
       return false;
     });
-  }, [formRoles, form.RoleScopeType, showRoleScopeSelect, rbacRoles]);
+  }, [formRoles, rbacRoles]);
 
   const showOrmawaSelect = useMemo(() => {
     if (isCustomSuperAdmin) return false;
@@ -328,11 +321,6 @@ export default function UserManagement() {
     return newRole ? newRole.split(',').map(r => r.trim()).filter(Boolean) : [];
   }, [newRole]);
 
-  const showNewRoleScopeSelect = useMemo(() => {
-    if (newRoles.includes('super_admin') || newRoles.includes('student')) return false;
-    return true;
-  }, [newRoles]);
-
   const isNewCustomSuperAdmin = useMemo(() => {
     return newRoles.some(r => {
       if (r === 'super_admin' || r === 'superadmin') return true;
@@ -346,8 +334,6 @@ export default function UserManagement() {
 
   const showNewFakultasSelect = useMemo(() => {
     if (isNewCustomSuperAdmin) return false;
-    if (showNewRoleScopeSelect && newRoleScopeType === 'university') return false;
-    if (showNewRoleScopeSelect && (newRoleScopeType === 'faculty' || newRoleScopeType === 'prodi')) return true;
     return newRoles.some(r => {
       if (['faculty_admin', 'prodi_admin', 'student', 'ormawa_admin', 'ormawa', 'kencana_fakultas'].includes(r)) return true;
       const rbacRole = rbacRoles.find(role => role.key === r);
@@ -360,11 +346,10 @@ export default function UserManagement() {
       }
       return false;
     });
-  }, [newRoles, newRoleScopeType, showNewRoleScopeSelect, rbacRoles]);
+  }, [newRoles, rbacRoles]);
 
   const showNewProdiSelect = useMemo(() => {
     if (isNewCustomSuperAdmin) return false;
-    if (showNewRoleScopeSelect && newRoleScopeType === 'prodi') return true;
     return newRoles.some(r => {
       if (['student', 'ormawa_admin', 'ormawa', 'prodi_admin'].includes(r)) return true;
       const rbacRole = rbacRoles.find(role => role.key === r);
@@ -373,7 +358,7 @@ export default function UserManagement() {
       }
       return false;
     });
-  }, [newRoles, newRoleScopeType, showNewRoleScopeSelect, rbacRoles]);
+  }, [newRoles, rbacRoles]);
 
   const showNewOrmawaSelect = useMemo(() => {
     if (isNewCustomSuperAdmin) return false;
@@ -535,11 +520,11 @@ export default function UserManagement() {
         Password: String(form.Password || ''),
         Role: String(form.Role || '').trim(),
         Nama: String(form.Nama || '').trim(),
-        FakultasID: Number(form.FakultasID) || 0,
-        ProgramStudiID: Number(form.ProgramStudiID) || 0,
-        OrmawaAssign: String(form.OrmawaAssign || '').trim(),
-        OrmawaID: Number(form.OrmawaID) || 0,
-        RoleScopeType: String(form.RoleScopeType || 'university').trim(),
+        FakultasID: showFakultasSelect ? (Number(form.FakultasID) || 0) : 0,
+        ProgramStudiID: showProdiSelect ? (Number(form.ProgramStudiID) || 0) : 0,
+        OrmawaAssign: showOrmawaSelect ? String(form.OrmawaAssign || '').trim() : '',
+        OrmawaID: showOrmawaSelect ? (Number(form.OrmawaID) || 0) : 0,
+        RoleScopeType: showProdiSelect ? 'prodi' : (showFakultasSelect ? 'faculty' : 'university'),
         Phone: String(form.Phone || '').trim(),
       }
       const res = await adminService.createUser(payload)
@@ -573,11 +558,11 @@ export default function UserManagement() {
         userId,
         role: newRole,
         action: 'add',
-        ormawaId: Number(newOrmawaId) || 0,
-        ormawaAssign: String(newOrmawaAssign || '').trim(),
-        fakultasId: Number(newFakultasId) || 0,
-        prodiId: Number(newProdiId) || 0,
-        roleScopeType: String(newRoleScopeType || 'university').trim()
+        ormawaId: showNewOrmawaSelect ? (Number(newOrmawaId) || 0) : 0,
+        ormawaAssign: showNewOrmawaSelect ? String(newOrmawaAssign || '').trim() : '',
+        fakultasId: showNewFakultasSelect ? (Number(newFakultasId) || 0) : 0,
+        prodiId: showNewProdiSelect ? (Number(newProdiId) || 0) : 0,
+        roleScopeType: showNewProdiSelect ? 'prodi' : (showNewFakultasSelect ? 'faculty' : 'university')
       })
       if (res.status === 'success') {
         toast.success('Level otorisasi & identitas berhasil diperbarui')
@@ -890,28 +875,10 @@ export default function UserManagement() {
                   </Select>
                 </div>
 
-                {showRoleScopeSelect && (
-                  <>
-                    <div className="space-y-2 col-span-1 md:col-span-2 pt-4 border-t border-slate-200/50">
-                      <Label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1 font-headline">Pengaturan Scope Role</Label>
-                    </div>
-                    <div className="space-y-2">
-                      <Label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1 font-headline">Role Scope</Label>
-                      <Select value={form.RoleScopeType} onValueChange={v => setForm({ ...form, RoleScopeType: v, FakultasID: v === 'university' ? '' : form.FakultasID, ProgramStudiID: (v === 'university' || v === 'faculty') ? '' : form.ProgramStudiID })}>
-                        <SelectTrigger className="h-12 rounded-xl border-slate-200 bg-white focus:bg-white focus:border-bku-primary focus:ring-2 focus:ring-bku-primary/20 font-bold text-xs uppercase tracking-[0.08em] text-slate-700 transition-all"><SelectValue placeholder="Pilih Scope" /></SelectTrigger>
-                        <SelectContent className="rounded-xl shadow-2xl border-slate-100/80 bg-white/95 backdrop-blur-md z-[9999]">
-                          <SelectItem value="faculty" className="text-[10px] font-black uppercase tracking-widest">Fakultas</SelectItem>
-                          <SelectItem value="prodi" className="text-[10px] font-black uppercase tracking-widest">Program Studi</SelectItem>
-                          <SelectItem value="university" className="text-[10px] font-black uppercase tracking-widest">Universitas</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-2">
-                      <Label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1 font-headline">Phone</Label>
-                      <Input value={form.Phone} onChange={e => setForm({ ...form, Phone: e.target.value })} placeholder="Nomor kontak mentor" className="h-12 rounded-xl border-slate-200 bg-white focus:bg-white focus:border-bku-primary focus:ring-2 focus:ring-bku-primary/20 font-bold text-xs text-slate-800 transition-all font-inter" />
-                    </div>
-                  </>
-                )}
+                <div className="space-y-2">
+                  <Label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1 font-headline">Phone</Label>
+                  <Input value={form.Phone} onChange={e => setForm({ ...form, Phone: e.target.value })} placeholder="Nomor kontak" className="h-12 rounded-xl border-slate-200 bg-white focus:bg-white focus:border-bku-primary focus:ring-2 focus:ring-bku-primary/20 font-bold text-xs text-slate-800 transition-all font-inter" />
+                </div>
               </div>
             </div>
 
@@ -1109,27 +1076,6 @@ export default function UserManagement() {
                   </SelectContent>
                 </Select>
               </div>
-
-              {showNewRoleScopeSelect && (
-                <>
-                  <div className="space-y-2 col-span-1 md:col-span-2 pt-4 border-t border-slate-200/50">
-                    <Label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1 font-headline">Pengaturan Scope Role</Label>
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1 font-headline">Role Scope</Label>
-                    <Select value={newRoleScopeType} onValueChange={v => { setNewRoleScopeType(v); if (v === 'university') { setNewFakultasId(''); setNewProdiId('') } else if (v === 'faculty') { setNewProdiId('') } }}>
-                      <SelectTrigger className="h-12 rounded-xl border-slate-200 bg-white focus:bg-white focus:border-bku-primary focus:ring-2 focus:ring-bku-primary/20 font-bold text-xs uppercase tracking-[0.08em] text-slate-700 transition-all">
-                        <SelectValue placeholder="PILIH SCOPE" />
-                      </SelectTrigger>
-                      <SelectContent className="rounded-xl shadow-2xl border-slate-100/80 bg-white/95 backdrop-blur-md z-[9999]">
-                        <SelectItem value="faculty" className="text-[10px] font-black uppercase tracking-widest text-slate-600 focus:bg-slate-50 focus:text-bku-primary">Fakultas</SelectItem>
-                        <SelectItem value="prodi" className="text-[10px] font-black uppercase tracking-widest text-slate-600 focus:bg-slate-50 focus:text-bku-primary">Program Studi</SelectItem>
-                        <SelectItem value="university" className="text-[10px] font-black uppercase tracking-widest text-slate-600 focus:bg-slate-50 focus:text-bku-primary">Universitas</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </>
-              )}
             </div>
           </div>
 

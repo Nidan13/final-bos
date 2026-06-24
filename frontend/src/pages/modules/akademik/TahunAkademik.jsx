@@ -56,8 +56,8 @@ export default function TahunAkademikPage() {
     setLoading(true)
     try {
       const [currentRes, allRes] = await Promise.all([
-        api.get("/app/dashboard/academic-periods"),
-        api.get("/app/dashboard/academic-periods/all")
+        api.get("/faculty/academic-periods"),
+        api.get("/faculty/academic-periods/all")
       ])
       if (currentRes.data.status === "success" && currentRes.data.data) setData([currentRes.data.data])
       if (allRes.data.status === "success" && allRes.data.data) setAllPeriods(allRes.data.data)
@@ -170,7 +170,7 @@ export default function TahunAkademikPage() {
     if (e) e.preventDefault()
     setIsSub(true)
     try {
-      await api.post("/app/dashboard/academic-periods", formData)
+      await api.post("/faculty/academic-periods", formData)
       toast.success(isEditMode ? "Periode berhasil diperbarui" : "Periode baru diinisialisasi")
       fetchData(); setCrudOpen(false)
     } catch (err) { toast.error(err.response?.data?.message || "Gagal menyimpan data periode") }
@@ -181,7 +181,7 @@ export default function TahunAkademikPage() {
     if (!delTarget) return
     setIsSub(true)
     try {
-      await api.delete(`/app/dashboard/academic-periods/${delTarget.id}`)
+      await api.delete(`/faculty/academic-periods/${delTarget.id}`)
       toast.success("Periode akademik berhasil dihapus")
       fetchData(); setDelTarget(null)
     } catch { toast.error("Gagal menghapus periode") }
@@ -191,7 +191,7 @@ export default function TahunAkademikPage() {
   const handleSyncSevima = async () => {
     setIsSyncing(true)
     try {
-      const res = await api.post("/app/dashboard/sync-periode")
+      const res = await api.post("/faculty/sync-periode")
       toast.success(res.data?.message || "Berhasil sinkronisasi periode dari SEVIMA")
       fetchData()
     } catch (err) {
