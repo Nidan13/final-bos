@@ -13,9 +13,9 @@ import { PrimaryStatsCard } from '@/components/ui/StatsCard';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/Popover';
 import { DataTable } from '@/components/ui/DataTable';
 import { Settings2 } from 'lucide-react';
-import { ManageMaterialsModal } from '../components/ManageMaterialsModal';
-import { ManageQuizzesModal } from '../components/ManageQuizzesModal';
-import { ManageAssignmentsModal } from '../components/ManageAssignmentsModal';
+import { ManageMaterialsModal } from '@/pages/modules/kencana/components/ManageMaterialsModal';
+import { ManageQuizzesModal } from '@/pages/modules/kencana/components/ManageQuizzesModal';
+import { ManageAssignmentsModal } from '@/pages/modules/kencana/components/ManageAssignmentsModal';
 
 // ──── Constants ────────────────────────────────────────────────────────────────
 const PHASE_CONFIG = {

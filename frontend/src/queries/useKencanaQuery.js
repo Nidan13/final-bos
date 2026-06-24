@@ -3,7 +3,7 @@ import { useLocation } from 'react-router-dom';
 import api from '../lib/axios';
 
 const unwrap = (res) => res.data && typeof res.data === 'object' && 'data' in res.data ? res.data.data : res.data;
-const isKencanaPath = (pathname) => pathname.startsWith('/student/kencana');
+const isKencanaPath = (pathname) => pathname.includes('/student/kencana');
 
 export const useKencanaDashboardQuery = (options = {}) => {
   const { pathname } = useLocation();
@@ -115,6 +115,14 @@ export const useKencanaAttendanceQuery = (options = {}) => {
     queryFn: async () => unwrap(await api.get('/kencana-student/attendance')),
     retry: false,
     enabled: isKencanaPath(pathname) && (options.enabled ?? true),
+  });
+};
+
+export const useSubmitStudentAttendanceMutation = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (payload) => unwrap(await api.post('/kencana-student/attendance', payload)),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['kencana', 'attendance'] }),
   });
 };
 

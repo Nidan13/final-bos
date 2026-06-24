@@ -6,6 +6,7 @@ import {
   useUpdateTimelinePhaseMutation,
   useUpdateUniversityPhaseMutation,
   useCreatePeriodMutation,
+  useUpdatePeriodMutation,
   useResetKencanaMutation,
 } from '@/queries/useKencanaAdminQuery';
 import toast from 'react-hot-toast';
@@ -62,9 +63,14 @@ const Periods = () => {
   const updateUniversityPhase = useUpdateUniversityPhaseMutation();
   const openFacultyPhases = useOpenFacultyPhasesMutation();
   const createPeriod = useCreatePeriodMutation();
+  const updatePeriod = useUpdatePeriodMutation();
 
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [newPeriodData, setNewPeriodData] = useState({ name: '', description: '', passing_grade: 60, remedial_grade: 50, theme: '' });
+  
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editPeriodData, setEditPeriodData] = useState({ id: '', name: '', description: '', passing_grade: 60, remedial_grade: 50, theme: '' });
+  
   const [isResetModalOpen, setIsResetModalOpen] = useState(false);
   const [resetConfirmText, setResetConfirmText] = useState('');
   const resetKencana = useResetKencanaMutation();
@@ -83,6 +89,21 @@ const Periods = () => {
         setNewPeriodData({ name: '', description: '', passing_grade: 60, remedial_grade: 50, theme: '' });
       },
       onError: (err) => toast.error(err?.response?.data?.message || 'Gagal membuat periode'),
+    });
+  };
+
+  const handleEditPeriod = async (e) => {
+    e.preventDefault();
+    if (!editPeriodData.name) {
+      toast.error('Nama periode wajib diisi');
+      return;
+    }
+    updatePeriod.mutate(editPeriodData, {
+      onSuccess: () => {
+        toast.success('Periode berhasil diupdate! Jika Anda mengubah batas kelulusan, Anda mungkin perlu melakukan "Hitung Ulang Semua Nilai" di menu Skoring.');
+        setIsEditModalOpen(false);
+      },
+      onError: (err) => toast.error(err?.response?.data?.message || 'Gagal mengupdate periode'),
     });
   };
 
@@ -122,8 +143,8 @@ const Periods = () => {
   const phaseState = useMemo(() => ({
     pra_kencana: savedTimeline.pra_kencana?.is_active ? 'active' : savedTimeline.pra_kencana?.status === 'completed' ? 'completed' : 'inactive',
     kencana_universitas: savedTimeline.kencana_universitas?.is_active ? 'active' : universityStatus === 'completed' ? 'completed' : 'inactive',
-    kencana_fakultas: savedTimeline.kencana_fakultas?.is_active ? 'active' : 'inactive',
-    pasca_kencana: savedTimeline.pasca_kencana?.is_active ? 'active' : 'inactive',
+    kencana_fakultas: savedTimeline.kencana_fakultas?.is_active ? 'active' : savedTimeline.kencana_fakultas?.status === 'completed' ? 'completed' : 'inactive',
+    pasca_kencana: savedTimeline.pasca_kencana?.is_active ? 'active' : savedTimeline.pasca_kencana?.status === 'completed' ? 'completed' : 'inactive',
   }), [savedTimeline, universityStatus]);
 
   const updateDraft = (key, field, value) => {
@@ -235,15 +256,36 @@ const Periods = () => {
                 <h2 className="mt-1 text-2xl font-bold text-[var(--theme-text)]">{selectedPeriod.name}</h2>
                 <p className="mt-1 text-sm font-medium text-[var(--theme-text-muted)] max-w-2xl">{selectedPeriod.description || 'Tidak ada deskripsi.'}</p>
               </div>
-              <div className="flex flex-wrap gap-4 text-right">
-                <div className="bg-[var(--theme-bg)] rounded-xl px-4 py-2 border border-[var(--theme-border)] text-left">
-                  <p className="text-[10px] font-black uppercase text-[var(--theme-text-subtle)]">Passing Grade</p>
-                  <p className="text-lg font-bold text-[var(--theme-success)]">{selectedPeriod.passing_grade}</p>
+              <div className="flex flex-wrap gap-4 text-right items-center">
+                <div className="bg-[var(--theme-bg)] rounded-xl px-4 py-2 border border-[var(--theme-border)] text-left flex items-center justify-between gap-4">
+                  <div>
+                    <p className="text-[10px] font-black uppercase text-[var(--theme-text-subtle)]">Passing Grade</p>
+                    <p className="text-lg font-bold text-[var(--theme-success)]">{selectedPeriod.passing_grade}</p>
+                  </div>
                 </div>
-                <div className="bg-[var(--theme-bg)] rounded-xl px-4 py-2 border border-[var(--theme-border)] text-left">
-                  <p className="text-[10px] font-black uppercase text-[var(--theme-text-subtle)]">Batas Remedial</p>
-                  <p className="text-lg font-bold text-[var(--theme-warning)]">{selectedPeriod.remedial_grade}</p>
+                <div className="bg-[var(--theme-bg)] rounded-xl px-4 py-2 border border-[var(--theme-border)] text-left flex items-center justify-between gap-4">
+                  <div>
+                    <p className="text-[10px] font-black uppercase text-[var(--theme-text-subtle)]">Batas Remedial</p>
+                    <p className="text-lg font-bold text-[var(--theme-warning)]">{selectedPeriod.remedial_grade}</p>
+                  </div>
                 </div>
+                <button
+                  onClick={() => {
+                    setEditPeriodData({
+                      id: selectedPeriod.id,
+                      name: selectedPeriod.name || '',
+                      description: selectedPeriod.description || '',
+                      passing_grade: selectedPeriod.passing_grade || 60,
+                      remedial_grade: selectedPeriod.remedial_grade || 50,
+                      theme: selectedPeriod.theme || ''
+                    });
+                    setIsEditModalOpen(true);
+                  }}
+                  className="h-10 px-3 rounded-xl border border-[var(--theme-border)] text-[var(--theme-text-muted)] hover:text-[var(--theme-primary)] hover:bg-[var(--theme-primary)]/10 hover:border-[var(--theme-primary)]/30 transition-colors flex items-center gap-2"
+                  title="Edit Periode"
+                >
+                  <span className="material-symbols-outlined text-base">edit</span>
+                </button>
               </div>
             </div>
             {selectedPeriod.theme && (
@@ -314,9 +356,59 @@ const Periods = () => {
                 <div className="rounded-xl bg-[var(--theme-bg)] p-8 text-center border border-[var(--theme-border)]">
                   <span className="material-symbols-outlined text-[var(--theme-text-subtle)] text-5xl mb-4">task_alt</span>
                   <h4 className="text-lg font-bold text-[var(--theme-text)]">Fase Evaluasi & Kelulusan</h4>
-                  <p className="mt-2 text-sm text-[var(--theme-text-muted)] max-w-md mx-auto">
+                  <p className="mt-2 text-sm text-[var(--theme-text-muted)] max-w-md mx-auto mb-6">
                     Pada tahap ini, orientasi telah selesai. Sistem akan menggunakan periode ini untuk menampilkan pengumuman kelulusan, nilai rekap, sertifikat, serta remedial bagi mahasiswa. Tidak memerlukan pengaturan *timeline* spesifik.
                   </p>
+                  {phaseState.pasca_kencana === 'active' ? (
+                    <div className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[var(--theme-success)]/10 text-[var(--theme-success)] font-bold text-sm border border-[var(--theme-success)]/20 mx-auto">
+                      <span className="material-symbols-outlined">verified</span>
+                      Pasca-Kencana Sedang Berjalan
+                    </div>
+                  ) : (
+                    <button 
+                      onClick={() => {
+                        // Akhiri kencana_fakultas terlebih dahulu
+                        updateTimelinePhase.mutate({
+                          periodId: selectedPeriod.id,
+                          phaseType: 'kencana_fakultas',
+                          status: 'completed',
+                          is_active: false,
+                          start_date: phaseDraft.kencana_fakultas?.start || null,
+                          end_date: phaseDraft.kencana_fakultas?.end || null
+                        }, {
+                          onSuccess: () => {
+                            // Setelah berhasil diakhiri, baru mulai pasca_kencana
+                            updateTimelinePhase.mutate({
+                              periodId: selectedPeriod.id,
+                              phaseType: 'pasca_kencana',
+                              status: 'active',
+                              is_active: true,
+                            }, {
+                              onSuccess: () => toast.success('Pasca-Kencana diaktifkan. Semua fase orientasi sebelumnya telah ditutup.'),
+                              onError: (err) => toast.error(err?.response?.data?.message || 'Gagal mengaktifkan Pasca-Kencana.')
+                            });
+                          },
+                          onError: (err) => {
+                            // Jika gagal (mungkin sudah nonaktif), langsung coba aktifkan pasca_kencana
+                            updateTimelinePhase.mutate({
+                              periodId: selectedPeriod.id,
+                              phaseType: 'pasca_kencana',
+                              status: 'active',
+                              is_active: true,
+                            }, {
+                              onSuccess: () => toast.success('Pasca-Kencana diaktifkan.'),
+                              onError: (err2) => toast.error(err2?.response?.data?.message || 'Gagal mengaktifkan Pasca-Kencana.')
+                            });
+                          }
+                        });
+                      }} 
+                      disabled={updateTimelinePhase.isPending}
+                      className="h-11 rounded-xl bg-[var(--theme-success)] hover:bg-[var(--theme-success)]/90 px-6 text-xs font-bold text-white shadow-md transition-colors flex items-center gap-2 mx-auto"
+                    >
+                      <span className="material-symbols-outlined text-base">task_alt</span>
+                      {updateTimelinePhase.isPending ? 'Memproses...' : 'Akhiri Orientasi & Mulai Pasca-Kencana'}
+                    </button>
+                  )}
                 </div>
               ) : (
                 <div className="max-w-3xl">
@@ -362,6 +454,10 @@ const Periods = () => {
                         <button disabled={universityStatus !== 'completed'} onClick={() => openFacultyPhases.mutate(selectedPeriod.id, { onSuccess: () => toast.success('Akses Semua Fakultas Dibuka') })} className="h-11 rounded-xl bg-[var(--theme-primary)] hover:bg-[var(--theme-primary-hover)] px-6 text-xs font-bold text-white shadow-md transition-colors disabled:opacity-40 flex items-center gap-2">
                           <span className="material-symbols-outlined text-base">lock_open</span>
                           Buka Akses Semua Fakultas
+                        </button>
+                        <button disabled={phaseState.kencana_fakultas !== 'active'} onClick={() => updateTimelinePhase.mutate({ periodId: selectedPeriod.id, phaseType: 'kencana_fakultas', status: 'completed', is_active: false, start_date: phaseDraft.kencana_fakultas?.start || null, end_date: phaseDraft.kencana_fakultas?.end || null }, { onSuccess: () => { setActivePhase('pasca_kencana'); toast.success('Fase Fakultas diakhiri'); }})} className="h-11 rounded-xl bg-[var(--theme-info)] hover:bg-[var(--theme-info)]/90 px-6 text-xs font-bold text-white shadow-md transition-colors disabled:opacity-40 flex items-center gap-2">
+                          <span className="material-symbols-outlined text-base">flag</span>
+                          Akhiri Fakultas
                         </button>
                       </>
                     ) : activePhase === 'pra_kencana' ? (
@@ -506,6 +602,82 @@ const Periods = () => {
                 className="w-full h-11 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-bg)] px-4 text-sm outline-none focus:ring-2 focus:ring-[var(--theme-primary)]/20 focus:border-[var(--theme-primary)] transition-all" 
               />
             </label>
+          </div>
+        </form>
+      </DialogModal>
+
+      {/* EDIT PERIOD MODAL */}
+      <DialogModal
+        open={isEditModalOpen}
+        onOpenChange={setIsEditModalOpen}
+        title="Edit Periode Kencana"
+        description="Ubah nama, deskripsi, atau batas nilai kelulusan."
+        icon="edit"
+        footer={
+          <>
+            <ModalCancelButton onClick={() => setIsEditModalOpen(false)} />
+            <ModalSaveButton form="edit-period-form" loading={updatePeriod.isPending} />
+          </>
+        }
+      >
+        <form id="edit-period-form" onSubmit={handleEditPeriod} className="space-y-5">
+          <label className="block space-y-1.5">
+            <span className="text-[11px] font-black uppercase tracking-widest text-[var(--theme-text-muted)]">Nama Periode <span className="text-red-500">*</span></span>
+            <input 
+              required
+              value={editPeriodData.name} 
+              onChange={e => setEditPeriodData(p => ({ ...p, name: e.target.value }))} 
+              className="w-full h-11 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-bg)] px-4 text-sm outline-none focus:ring-2 focus:ring-[var(--theme-primary)]/20 focus:border-[var(--theme-primary)] transition-all" 
+            />
+          </label>
+          
+          <label className="block space-y-1.5">
+            <span className="text-[11px] font-black uppercase tracking-widest text-[var(--theme-text-muted)]">Tema Orientasi</span>
+            <input 
+              value={editPeriodData.theme} 
+              onChange={e => setEditPeriodData(p => ({ ...p, theme: e.target.value }))} 
+              className="w-full h-11 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-bg)] px-4 text-sm outline-none focus:ring-2 focus:ring-[var(--theme-primary)]/20 focus:border-[var(--theme-primary)] transition-all" 
+            />
+          </label>
+          
+          <label className="block space-y-1.5">
+            <span className="text-[11px] font-black uppercase tracking-widest text-[var(--theme-text-muted)]">Deskripsi</span>
+            <textarea 
+              rows={3}
+              value={editPeriodData.description} 
+              onChange={e => setEditPeriodData(p => ({ ...p, description: e.target.value }))} 
+              className="w-full rounded-xl border border-[var(--theme-border)] bg-[var(--theme-bg)] p-4 text-sm outline-none focus:ring-2 focus:ring-[var(--theme-primary)]/20 focus:border-[var(--theme-primary)] transition-all resize-none" 
+            />
+          </label>
+
+          <div className="grid grid-cols-2 gap-4">
+            <label className="flex flex-col justify-end space-y-1.5">
+              <span className="text-[11px] font-black uppercase tracking-widest text-[var(--theme-text-muted)]">Batas Kelulusan</span>
+              <input 
+                type="number"
+                min="0" max="100"
+                value={editPeriodData.passing_grade} 
+                onChange={e => setEditPeriodData(p => ({ ...p, passing_grade: Number(e.target.value) }))} 
+                className="w-full h-11 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-bg)] px-4 text-sm outline-none focus:ring-2 focus:ring-[var(--theme-primary)]/20 focus:border-[var(--theme-primary)] transition-all" 
+              />
+            </label>
+            <label className="flex flex-col justify-end space-y-1.5">
+              <span className="text-[11px] font-black uppercase tracking-widest text-[var(--theme-text-muted)]">Batas Remedial</span>
+              <input 
+                type="number"
+                min="0" max="100"
+                value={editPeriodData.remedial_grade} 
+                onChange={e => setEditPeriodData(p => ({ ...p, remedial_grade: Number(e.target.value) }))} 
+                className="w-full h-11 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-bg)] px-4 text-sm outline-none focus:ring-2 focus:ring-[var(--theme-primary)]/20 focus:border-[var(--theme-primary)] transition-all" 
+              />
+            </label>
+          </div>
+          
+          <div className="rounded-xl bg-amber-50 border border-amber-200 p-3 flex gap-3 text-amber-800 mt-2">
+            <span className="material-symbols-outlined text-amber-600">info</span>
+            <p className="text-xs font-medium leading-relaxed">
+              Jika Anda mengubah Batas Kelulusan atau Batas Remedial, perubahan status (Lulus / Tidak Lulus) tidak akan langsung berubah di tabel nilai, sampai Mentor menyimpan ulang nilai mahasiswa atau Admin mengklik <strong>Hitung Ulang Semua Nilai</strong> di halaman Penilaian.
+            </p>
           </div>
         </form>
       </DialogModal>

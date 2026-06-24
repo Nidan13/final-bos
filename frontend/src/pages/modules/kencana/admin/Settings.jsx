@@ -1,7 +1,12 @@
-import React from 'react';
+import React, { useState } from 'react';
 import useAuthStore from '@/store/useAuthStore';
 import { PageHeader } from '@/components/ui/page/PageHeader';
 import { usePeriodsQuery } from '@/queries/useKencanaAdminQuery';
+import api from '@/lib/axios';
+import { toast } from 'react-hot-toast';
+import { Button } from '@/components/ui/Button';
+import { Input } from '@/components/ui/Input';
+import { Label } from '@/components/ui/Label';
 
 const Settings = ({ portalType = 'admin' }) => {
   const { user } = useAuthStore();
@@ -9,6 +14,43 @@ const Settings = ({ portalType = 'admin' }) => {
 
   const isFakultasPortal = portalType === 'faculty' || portalType === 'fakultas';
   const activePeriod = (periods || []).find(p => p.is_active) || periods?.[0] || null;
+
+  const [passwords, setPasswords] = useState({ OldPassword: '', NewPassword: '', ConfirmPassword: '' });
+  const [showPwd, setShowPwd] = useState({ old: false, new: false, confirm: false });
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleChangePassword = async (e) => {
+      e.preventDefault();
+      if (passwords.NewPassword !== passwords.ConfirmPassword) {
+          toast.error('Konfirmasi password baru tidak sesuai');
+          return;
+      }
+      setSubmitting(true);
+      try {
+          let res;
+          if (isFakultasPortal) {
+              res = await api.put('/faculty/change-password', {
+                  old_password: passwords.OldPassword,
+                  new_password: passwords.NewPassword,
+                  confirm_password: passwords.ConfirmPassword
+              });
+          } else {
+              res = await api.put('/admin/profile', {
+                  OldPassword: passwords.OldPassword,
+                  NewPassword: passwords.NewPassword
+              });
+          }
+
+          if (res.data.status === 'success' || res.data.success) {
+              toast.success('Password berhasil diperbarui');
+              setPasswords({ OldPassword: '', NewPassword: '', ConfirmPassword: '' });
+          }
+      } catch (err) {
+          toast.error(err.response?.data?.message || 'Gagal memperbarui password');
+      } finally {
+          setSubmitting(false);
+      }
+  };
 
   // Derive administrative role name
   const userRole = String(user?.role || user?.Role || '').toLowerCase();
@@ -75,17 +117,87 @@ const Settings = ({ portalType = 'admin' }) => {
               </div>
 
               <div className="space-y-8">
-                  <div className="space-y-3">
-                      <label className="text-[10px] font-black text-[var(--theme-text-muted)] uppercase tracking-widest ml-1 font-headline">Manajemen Identitas</label>
-                      <div className="p-4 rounded-xl border border-[var(--theme-border-muted)] bg-[var(--theme-bg)] flex items-start gap-4">
-                        <span className="material-symbols-outlined text-[var(--theme-text-muted)] mt-0.5">info</span>
-                        <div>
-                          <p className="text-xs font-bold text-[var(--theme-text)]">Pembaruan Profil Administrator</p>
-                          <p className="text-[11px] font-medium text-[var(--theme-text-muted)] mt-1">
-                            Akun Anda adalah akun administratif yang melekat pada RBAC Sistem Utama Siakad. Untuk mengubah kata sandi atau memperbarui email, silakan gunakan panel <strong className="text-[var(--theme-primary)]">Pengaturan Profil</strong> di menu utama (Super Admin/Fakultas).
-                          </p>
+                  <div className="space-y-4">
+                      <label className="text-[10px] font-black text-[var(--theme-text-muted)] uppercase tracking-widest ml-1 font-headline">Manajemen Identitas & Keamanan</label>
+                      
+                      <form onSubmit={handleChangePassword} className="p-6 rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-bg)] space-y-6">
+                        <div className="flex items-center gap-3 border-b border-[var(--theme-border-muted)] pb-4">
+                          <div className="size-8 rounded-lg bg-[var(--theme-primary-light)] text-[var(--theme-primary)] flex items-center justify-center">
+                            <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>lock_reset</span>
+                          </div>
+                          <div>
+                            <p className="text-xs font-bold text-[var(--theme-text)] uppercase tracking-tight">Ganti Password</p>
+                            <p className="text-[10px] font-medium text-[var(--theme-text-muted)]">Perbarui kredensial keamanan akun Anda</p>
+                          </div>
                         </div>
-                      </div>
+
+                        <div className="space-y-4">
+                          <div className="space-y-2">
+                              <Label className="text-[10px] font-black text-[var(--theme-text-muted)] uppercase tracking-widest ml-1">Password Saat Ini</Label>
+                              <div className="relative group">
+                                  <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 size-4 text-[var(--theme-text-muted)]" style={{ fontSize: '18px' }}>key</span>
+                                  <Input 
+                                      type={showPwd.old ? 'text' : 'password'}
+                                      value={passwords.OldPassword}
+                                      onChange={(e) => setPasswords({...passwords, OldPassword: e.target.value})}
+                                      placeholder="Masukkan password saat ini..."
+                                      className="h-10 pl-10 pr-10 rounded-xl border border-[var(--theme-border)] bg-white text-xs font-semibold focus:ring-2 focus:ring-[var(--theme-primary-light)]"
+                                      required
+                                  />
+                                  <button type="button" onClick={() => setShowPwd({...showPwd, old: !showPwd.old})} className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--theme-text-muted)] hover:text-[var(--theme-text)]">
+                                    <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>{showPwd.old ? 'visibility_off' : 'visibility'}</span>
+                                  </button>
+                              </div>
+                          </div>
+
+                          <div className="space-y-2">
+                              <Label className="text-[10px] font-black text-[var(--theme-text-muted)] uppercase tracking-widest ml-1">Password Baru</Label>
+                              <div className="relative group">
+                                  <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 size-4 text-[var(--theme-text-muted)]" style={{ fontSize: '18px' }}>vpn_key</span>
+                                  <Input 
+                                      type={showPwd.new ? 'text' : 'password'}
+                                      value={passwords.NewPassword}
+                                      onChange={(e) => setPasswords({...passwords, NewPassword: e.target.value})}
+                                      placeholder="Masukkan password baru..."
+                                      className="h-10 pl-10 pr-10 rounded-xl border border-[var(--theme-border)] bg-white text-xs font-semibold focus:ring-2 focus:ring-[var(--theme-primary-light)]"
+                                      required
+                                  />
+                                  <button type="button" onClick={() => setShowPwd({...showPwd, new: !showPwd.new})} className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--theme-text-muted)] hover:text-[var(--theme-text)]">
+                                    <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>{showPwd.new ? 'visibility_off' : 'visibility'}</span>
+                                  </button>
+                              </div>
+                          </div>
+
+                          <div className="space-y-2">
+                              <Label className="text-[10px] font-black text-[var(--theme-text-muted)] uppercase tracking-widest ml-1">Konfirmasi Password</Label>
+                              <div className="relative group">
+                                  <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 size-4 text-[var(--theme-text-muted)]" style={{ fontSize: '18px' }}>vpn_key</span>
+                                  <Input 
+                                      type={showPwd.confirm ? 'text' : 'password'}
+                                      value={passwords.ConfirmPassword}
+                                      onChange={(e) => setPasswords({...passwords, ConfirmPassword: e.target.value})}
+                                      placeholder="Ulangi password baru..."
+                                      className="h-10 pl-10 pr-10 rounded-xl border border-[var(--theme-border)] bg-white text-xs font-semibold focus:ring-2 focus:ring-[var(--theme-primary-light)]"
+                                      required
+                                  />
+                                  <button type="button" onClick={() => setShowPwd({...showPwd, confirm: !showPwd.confirm})} className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--theme-text-muted)] hover:text-[var(--theme-text)]">
+                                    <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>{showPwd.confirm ? 'visibility_off' : 'visibility'}</span>
+                                  </button>
+                              </div>
+                          </div>
+                        </div>
+
+                        <div className="pt-2 flex justify-end">
+                            <Button 
+                                type="submit"
+                                disabled={submitting}
+                                className="h-10 px-6 bg-[var(--theme-primary)] hover:bg-[var(--theme-primary-hover)] text-white rounded-xl text-xs font-bold uppercase tracking-widest flex items-center gap-2"
+                            >
+                                {submitting ? <span className="material-symbols-outlined animate-spin" style={{ fontSize: '16px' }}>sync</span> : <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>save</span>}
+                                Simpan Password
+                            </Button>
+                        </div>
+                      </form>
                   </div>
 
                   <div className="space-y-3">

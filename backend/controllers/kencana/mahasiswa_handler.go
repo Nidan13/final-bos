@@ -42,6 +42,11 @@ func GetDashboard(c *fiber.Ctx) error {
 	}
 
 	lastActivity := findLastActivity(period.ID, student)
+	
+	univMentor := activeMentorForStudent(period.ID, student.ID, "university")
+	facMentor := activeMentorForStudent(period.ID, student.ID, "faculty")
+	hasUnivPending, hasFacPending := hasPendingInvitation(period.ID, student.ID)
+
 	return c.JSON(fiber.Map{"success": true, "data": fiber.Map{
 		"period":                fiber.Map{"id": period.ID, "name": period.Name, "year": period.Year, "description": period.Description, "start_date": period.StartDate, "end_date": period.EndDate},
 		"status":                scoreUniv.GraduationStatus, // Legacy
@@ -62,22 +67,37 @@ func GetDashboard(c *fiber.Ctx) error {
 		"last_activity":         lastActivity,
 		"blockers":              blockersUniv,
 		"notifications":         importantNotifications(period.ID, student.ID, blockersUniv),
-		"mentor":                activeMentorForStudent(period.ID, student.ID, "university"),
-		"mentor_fakultas":       activeMentorForStudent(period.ID, student.ID, "faculty"),
-		"has_pending_invitation": hasPendingInvitation(period.ID, student.ID),
-		"weights":               fiber.Map{"cognitive": period.CognitiveWeight, "psychomotor": period.PsychomotorWeight, "affective": period.AffectiveWeight},
+		"mentor":                univMentor,
+		"mentor_fakultas":               facMentor,
+		"has_pending_invitation":        hasUnivPending,
+		"has_pending_faculty_invitation": hasFacPending,
+		"weights":                       fiber.Map{"cognitive": period.CognitiveWeight, "psychomotor": period.PsychomotorWeight, "affective": period.AffectiveWeight},
 	}})
 }
 
-func hasPendingInvitation(periodID, studentID uint) bool {
-	var mentorCount int64
-	config.DB.Model(&models.KencanaMentorAssignment{}).Where("period_id = ? AND student_id = ? AND status = ?", periodID, studentID, "pending").Count(&mentorCount)
-	var groupCount int64
-	config.DB.Model(&models.KencanaGroupMember{}).
-		Joins("JOIN mahasiswa.kencana_groups ON mahasiswa.kencana_groups.id = mahasiswa.kencana_group_members.group_id").
-		Where("mahasiswa.kencana_groups.period_id = ? AND mahasiswa.kencana_group_members.student_id = ? AND mahasiswa.kencana_group_members.status = ?", periodID, studentID, "pending").
-		Count(&groupCount)
-	return mentorCount > 0 || groupCount > 0
+func hasPendingInvitation(periodID, studentID uint) (bool, bool) {
+	var mentors []models.KencanaMentorAssignment
+	config.DB.Preload("Mentor").Where("period_id = ? AND student_id = ? AND status = ?", periodID, studentID, "pending").Find(&mentors)
+
+	var groups []models.KencanaGroupMember
+	config.DB.Preload("Group").Where("period_id = ? AND student_id = ? AND status = ?", periodID, studentID, "pending").Find(&groups)
+
+	var univ, fac bool
+	for _, m := range mentors {
+		if m.Mentor.ScopeType == "university" {
+			univ = true
+		} else if m.Mentor.ScopeType == "faculty" {
+			fac = true
+		}
+	}
+	for _, g := range groups {
+		if g.Group.ScopeType == "university" {
+			univ = true
+		} else if g.Group.ScopeType == "faculty" {
+			fac = true
+		}
+	}
+	return univ, fac
 }
 
 func GetMentorInvitations(c *fiber.Ctx) error {
@@ -840,24 +860,7 @@ func SubmitAssignment(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"success": true, "message": "Tugas berhasil dikumpulkan", "data": submission})
 }
 
-func GetHandbook(c *fiber.Ctx) error {
-	student, err := currentStudent(c)
-	if err != nil {
-		return err
-	}
-	period, err := ensureDemoPeriod(config.DB, student)
-	if err != nil {
-		return c.Status(500).JSON(fiber.Map{"success": false, "message": "Gagal memuat periode"})
-	}
-	var handbook models.KencanaHandbook
-	if err := config.DB.Where("period_id = ? AND student_id = ?", period.ID, student.ID).First(&handbook).Error; err == gorm.ErrRecordNotFound {
-		handbook = models.KencanaHandbook{PeriodID: period.ID, StudentID: student.ID, Status: "not_started", ContentJSON: []byte(`{}`)}
-	}
-	return c.JSON(fiber.Map{"success": true, "data": handbook})
-}
 
-func SaveHandbookDraft(c *fiber.Ctx) error { return saveHandbook(c, "draft") }
-func SubmitHandbook(c *fiber.Ctx) error    { return saveHandbook(c, "submitted") }
 
 func GetAttendance(c *fiber.Ctx) error {
 	student, err := currentStudent(c)
@@ -868,7 +871,7 @@ func GetAttendance(c *fiber.Ctx) error {
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{"success": false, "message": "Gagal memuat periode"})
 	}
-	info := attendanceSummary(config.DB, period.ID, student.ID)
+	info := attendanceSummary(config.DB, period.ID, student.ID, "", nil)
 
 	var sessions []models.KencanaSession
 	config.DB.Joins("JOIN mahasiswa.kencana_stages ON mahasiswa.kencana_stages.id = mahasiswa.kencana_sessions.stage_id").
@@ -1197,6 +1200,46 @@ func upsertScoreItem(db *gorm.DB, periodID, studentID uint, component, itemName 
 	db.Create(&item)
 }
 
+func GetHandbook(c *fiber.Ctx) error {
+	student, err := currentStudent(c)
+	if err != nil {
+		return err
+	}
+	period, err := ensureDemoPeriod(config.DB, student)
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"success": false, "message": "Gagal memuat periode"})
+	}
+
+	var handbooks []models.KencanaHandbook
+	config.DB.Where("period_id = ? AND student_id = ?", period.ID, student.ID).Find(&handbooks)
+
+	var authorizedScopes []string
+	var activeScope string
+	if activeMentorForStudent(period.ID, student.ID, "university") != nil {
+		authorizedScopes = append(authorizedScopes, "university")
+		activeScope = "university"
+	}
+	if activeMentorForStudent(period.ID, student.ID, "faculty") != nil {
+		authorizedScopes = append(authorizedScopes, "faculty")
+		activeScope = "faculty"
+	}
+
+	var activeHandbook *models.KencanaHandbook
+	for i, h := range handbooks {
+		if h.ScopeType == activeScope {
+			activeHandbook = &handbooks[i]
+			break
+		}
+	}
+
+	return c.JSON(fiber.Map{"success": true, "data": fiber.Map{
+		"handbook":          activeHandbook,
+		"history":           handbooks,
+		"active_scope":      activeScope,
+		"authorized_scopes": authorizedScopes,
+	}})
+}
+
 func saveHandbook(c *fiber.Ctx, status string) error {
 	student, err := currentStudent(c)
 	if err != nil {
@@ -1206,40 +1249,56 @@ func saveHandbook(c *fiber.Ctx, status string) error {
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{"success": false, "message": "Gagal memuat periode"})
 	}
-	if status == "submitted" && activeMentorForStudent(period.ID, student.ID, "university") == nil {
-		return c.Status(400).JSON(fiber.Map{"success": false, "message": "Anda belum memiliki Dewan Pembimbing (DP) tingkat Universitas aktif"})
+
+	var payload struct {
+		ScopeType string         `json:"scope_type"`
+		Payload   map[string]any `json:"payload"`
 	}
-	var body map[string]any
-	if err := c.BodyParser(&body); err != nil {
+	if err := c.BodyParser(&payload); err != nil {
 		return c.Status(400).JSON(fiber.Map{"success": false, "message": "Payload handbook tidak valid"})
 	}
-	bytes, _ := json.Marshal(body)
+
+	scope := payload.ScopeType
+	if scope == "" {
+		scope = "university"
+	}
+
+	if status == "submitted" && activeMentorForStudent(period.ID, student.ID, scope) == nil {
+		return c.Status(400).JSON(fiber.Map{"success": false, "message": "Anda belum memiliki Dewan Pembimbing (DP) aktif untuk cakupan ini"})
+	}
+
+	bytes, _ := json.Marshal(payload.Payload)
 	now := time.Now().UTC()
-	handbook := models.KencanaHandbook{PeriodID: period.ID, StudentID: student.ID, ContentJSON: bytes, Status: status}
+	handbook := models.KencanaHandbook{PeriodID: period.ID, StudentID: student.ID, ScopeType: scope, ContentJSON: bytes, Status: status}
 	if status == "submitted" {
 		handbook.SubmittedAt = &now
 	}
+
+	// Update existing record for this scope
 	var existing models.KencanaHandbook
-	err = config.DB.Where("period_id = ? AND student_id = ?", period.ID, student.ID).First(&existing).Error
-	if err == nil {
+	if err := config.DB.Where("period_id = ? AND student_id = ? AND scope_type = ?", period.ID, student.ID, scope).First(&existing).Error; err == nil {
 		existing.ContentJSON = bytes
 		existing.Status = status
 		if status == "submitted" {
 			existing.SubmittedAt = &now
 		}
+		if err := config.DB.Save(&existing).Error; err != nil {
+			return c.Status(500).JSON(fiber.Map{"success": false, "message": "Gagal menyimpan perubahan handbook", "error": err.Error()})
+		}
 		handbook = existing
-		err = config.DB.Save(&handbook).Error
 	} else {
-		err = config.DB.Create(&handbook).Error
+		if err := config.DB.Create(&handbook).Error; err != nil {
+			return c.Status(500).JSON(fiber.Map{"success": false, "message": "Gagal membuat draft handbook", "error": err.Error()})
+		}
 	}
-	if err != nil {
-		return c.Status(500).JSON(fiber.Map{"success": false, "message": "Gagal menyimpan handbook"})
-	}
-
+	
 	logActivity(c, "kencana", fmt.Sprintf("Menyimpan handbook (%s)", status))
 
 	return c.JSON(fiber.Map{"success": true, "data": handbook})
 }
+
+func SaveHandbookDraft(c *fiber.Ctx) error { return saveHandbook(c, "draft") }
+func SubmitHandbook(c *fiber.Ctx) error    { return saveHandbook(c, "submitted") }
 
 // GetBanding returns student's banding/appeal list
 func GetBanding(c *fiber.Ctx) error {

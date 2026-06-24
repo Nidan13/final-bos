@@ -1,38 +1,80 @@
-import React, { useState } from 'react';
-import { useAnnouncementsQuery, useCreateAnnouncementMutation, useDeleteAnnouncementMutation } from '@/queries/useKencanaAdminQuery';
+import React, { useState, useMemo } from 'react';
+import { useAnnouncementsQuery, useCreateAnnouncementMutation, useDeleteAnnouncementMutation, useUpdateAnnouncementMutation } from '@/queries/useKencanaAdminQuery';
 import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
 import { DataTable } from '@/components/ui/DataTable';
 import ReactQuill from 'react-quill-new';
 import 'react-quill-new/dist/quill.snow.css';
+import { PageHeader } from '@/components/ui/page/PageHeader';
+import { Button } from '@/components/ui/button';
+import { Eye, Pencil, Trash2 } from 'lucide-react';
+import { DialogModal } from '@/components/ui/DialogModal';
 
 export default function Announcements({ portal = 'admin' }) {
   const { data: announcements, isLoading } = useAnnouncementsQuery(portal);
   const createMutation = useCreateAnnouncementMutation(portal);
+  const updateMutation = useUpdateAnnouncementMutation(portal);
   const deleteMutation = useDeleteAnnouncementMutation(portal);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalMode, setModalMode] = useState('create'); // 'create' | 'edit' | 'detail'
+  const [selectedData, setSelectedData] = useState(null);
+  const [filterTarget, setFilterTarget] = useState('all');
+
   const { register, handleSubmit, reset, setValue, watch, formState: { errors } } = useForm({
     defaultValues: { target_role: 'mahasiswa', judul: '', isi: '' }
   });
   
   const isiValue = watch("isi");
 
+  const handleOpenCreate = () => {
+    reset({ target_role: 'mahasiswa', judul: '', isi: '' });
+    setModalMode('create');
+    setIsModalOpen(true);
+  };
+
+  const handleOpenEdit = (data) => {
+    setSelectedData(data);
+    reset({ target_role: data.target_role, judul: data.judul, isi: data.isi });
+    setModalMode('edit');
+    setIsModalOpen(true);
+  };
+
+  const handleOpenDetail = (data) => {
+    setSelectedData(data);
+    setModalMode('detail');
+    setIsModalOpen(true);
+  };
+
   const onSubmit = (data) => {
     if (!data.isi || data.isi.trim() === '' || data.isi === '<p><br></p>') {
       toast.error('Isi pengumuman wajib diisi');
       return;
     }
-    createMutation.mutate(data, {
-      onSuccess: () => {
-        toast.success('Pengumuman berhasil dibuat');
-        setIsModalOpen(false);
-        reset();
-      },
-      onError: (err) => {
-        toast.error(err?.response?.data?.message || 'Gagal membuat pengumuman');
-      }
-    });
+    
+    if (modalMode === 'edit') {
+      updateMutation.mutate({ id: selectedData.id, ...data }, {
+        onSuccess: () => {
+          toast.success('Pengumuman berhasil diperbarui');
+          setIsModalOpen(false);
+          reset();
+        },
+        onError: (err) => {
+          toast.error(err?.response?.data?.message || 'Gagal memperbarui pengumuman');
+        }
+      });
+    } else {
+      createMutation.mutate(data, {
+        onSuccess: () => {
+          toast.success('Pengumuman berhasil dibuat');
+          setIsModalOpen(false);
+          reset();
+        },
+        onError: (err) => {
+          toast.error(err?.response?.data?.message || 'Gagal membuat pengumuman');
+        }
+      });
+    }
   };
 
   const handleDelete = (id) => {
@@ -44,87 +86,164 @@ export default function Announcements({ portal = 'admin' }) {
     }
   };
 
+  const tableData = useMemo(() => {
+    if (!announcements) return [];
+    if (filterTarget === 'all') return announcements;
+    return announcements.filter(a => a.target_role === filterTarget);
+  }, [announcements, filterTarget]);
+
   const columns = [
-    { header: 'Tanggal', accessor: (row) => new Date(row.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' }) },
-    { header: 'Judul', accessor: 'judul' },
-    { header: 'Target', accessor: (row) => row.target_role === 'both' ? 'Semua' : (row.target_role === 'mahasiswa' ? 'Mahasiswa' : 'Mentor') },
-    { header: 'Aksi', accessor: (row) => (
-      <button onClick={() => handleDelete(row.id)} className="text-red-500 hover:text-red-700 p-1 rounded transition-colors" title="Hapus">
-        <span className="material-symbols-outlined text-xl">delete</span>
-      </button>
+    { key: 'created_at', label: 'Tanggal', render: (_, row) => new Date(row.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' }) },
+    { key: 'judul', label: 'Judul' },
+    { key: 'isi', label: 'Isi Pengumuman', render: (_, row) => {
+      let plainText = '';
+      if (row.isi) {
+        const tmp = document.createElement('div');
+        tmp.innerHTML = row.isi;
+        plainText = tmp.textContent || tmp.innerText || '';
+      }
+      return <span className="text-slate-500 line-clamp-1 max-w-[250px]" title={plainText}>{plainText.length > 60 ? plainText.substring(0, 60) + '...' : plainText || '-'}</span>;
+    }},
+    { key: 'target_role', label: 'Target', render: (_, row) => (
+      <span className="px-2.5 py-1 bg-slate-100 border border-slate-200 text-slate-700 text-[11px] font-bold uppercase tracking-wider rounded-md">
+        {row.target_role === 'both' ? 'Semua' : (row.target_role === 'mahasiswa' ? 'Mahasiswa' : 'Mentor')}
+      </span>
+    ) },
+    { key: 'action', label: 'Aksi', render: (_, row) => (
+      <div className="flex items-center gap-1">
+        <button onClick={() => handleOpenDetail(row)} className="p-1.5 rounded-lg text-[var(--theme-text-muted)] hover:text-[var(--theme-primary)] hover:bg-[var(--theme-primary)]/10 transition-colors" title="Lihat">
+          <Eye className="w-4 h-4" strokeWidth={2.5} />
+        </button>
+        <button onClick={() => handleOpenEdit(row)} className="p-1.5 rounded-lg text-[var(--theme-text-muted)] hover:text-amber-600 hover:bg-amber-50 transition-colors" title="Edit">
+          <Pencil className="w-4 h-4" strokeWidth={2.5} />
+        </button>
+        <button onClick={() => handleDelete(row.id)} className="p-1.5 rounded-lg text-[var(--theme-text-muted)] hover:text-red-600 hover:bg-red-50 transition-colors" title="Hapus">
+          <Trash2 className="w-4 h-4" strokeWidth={2.5} />
+        </button>
+      </div>
     ) }
   ];
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-2xl font-bold tracking-tight text-[var(--theme-text)]">Pengumuman</h2>
-          <p className="text-[var(--theme-text-muted)]">Kelola informasi dan pengumuman untuk mahasiswa dan dewan pembimbing.</p>
-        </div>
-        <button onClick={() => setIsModalOpen(true)} className="px-4 py-2 bg-[var(--theme-primary)] text-white rounded-lg font-medium shadow hover:opacity-90 flex items-center gap-2 transition-all active:scale-95">
-          <span className="material-symbols-outlined text-sm">add</span>
-          Buat Pengumuman
-        </button>
+      <PageHeader
+        title="Pengumuman"
+        subtitle="Kelola informasi dan pengumuman untuk mahasiswa dan dewan pembimbing."
+        icon="campaign"
+        breadcrumbs={[
+          { label: 'Admin', path: '#' },
+          { label: 'Kencana', path: '#' },
+          { label: 'Pengumuman', path: '#' },
+        ]}
+        action={
+          <Button onClick={handleOpenCreate} className="flex items-center gap-2">
+            <span className="material-symbols-outlined text-sm">add</span>
+            Buat Pengumuman
+          </Button>
+        }
+      />
+
+      <div className="mt-6">
+        <DataTable 
+          columns={columns} 
+          data={tableData} 
+          loading={isLoading}
+          title="Daftar Pengumuman"
+          searchPlaceholder="Cari pengumuman..."
+          itemLabel="pengumuman"
+          actions={
+            <div className="flex items-center gap-2">
+              <select
+                value={filterTarget}
+                onChange={(e) => setFilterTarget(e.target.value)}
+                className="h-9 px-3 rounded-lg border border-slate-200 bg-white text-[11px] font-bold text-slate-700 outline-none focus:border-[var(--theme-primary)] transition-all cursor-pointer"
+              >
+                <option value="all">Semua Target</option>
+                <option value="mahasiswa">Mahasiswa</option>
+                <option value="mentor">Mentor</option>
+                <option value="both">Semua (Both)</option>
+              </select>
+            </div>
+          }
+        />
       </div>
 
-      <div className="glass-card">
-        {isLoading ? (
-          <div className="p-8 text-center text-[var(--theme-text-muted)] animate-pulse">Memuat data...</div>
-        ) : announcements?.length === 0 ? (
-          <div className="p-12 text-center text-[var(--theme-text-muted)]">
-            <span className="material-symbols-outlined text-4xl mb-3 opacity-50 block">campaign</span>
-            <p>Belum ada pengumuman.</p>
-          </div>
-        ) : (
-          <DataTable columns={columns} data={announcements || []} />
-        )}
-      </div>
-
-      {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-[var(--theme-surface)] rounded-2xl shadow-xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]">
-            <div className="p-6 border-b border-[var(--theme-border-muted)] flex justify-between items-center bg-[var(--theme-bg)]">
-              <h3 className="text-lg font-bold text-[var(--theme-text)]">Buat Pengumuman Baru</h3>
-              <button onClick={() => setIsModalOpen(false)} className="text-[var(--theme-text-muted)] hover:text-[var(--theme-text)] transition-colors rounded-full p-1 hover:bg-slate-100 dark:hover:bg-slate-800">
-                <span className="material-symbols-outlined">close</span>
+      <DialogModal
+        open={isModalOpen}
+        onOpenChange={setIsModalOpen}
+        title={modalMode === 'create' ? 'Buat Pengumuman Baru' : modalMode === 'edit' ? 'Edit Pengumuman' : 'Detail Pengumuman'}
+        subtitle={modalMode === 'detail' ? 'Informasi lengkap pengumuman.' : 'Lengkapi form di bawah untuk menyimpan pengumuman.'}
+        icon={modalMode === 'detail' ? 'info' : modalMode === 'edit' ? 'edit_document' : 'campaign'}
+      >
+        {modalMode === 'detail' && selectedData ? (
+          <div className="space-y-6 p-2">
+            <div>
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Judul Pengumuman</p>
+              <h3 className="text-lg font-black text-slate-800">{selectedData.judul}</h3>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Target Role</p>
+                <span className="px-2.5 py-1 bg-slate-100 border border-slate-200 text-slate-700 text-[11px] font-bold uppercase tracking-wider rounded-md inline-block">
+                  {selectedData.target_role === 'both' ? 'Semua' : (selectedData.target_role === 'mahasiswa' ? 'Mahasiswa' : 'Mentor')}
+                </span>
+              </div>
+              <div>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Tanggal Dibuat</p>
+                <p className="text-sm font-bold text-slate-700">
+                  {new Date(selectedData.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                </p>
+              </div>
+            </div>
+            <div>
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Isi Pengumuman</p>
+              <div 
+                className="prose prose-sm max-w-none prose-slate p-4 bg-slate-50 rounded-xl border border-slate-100 break-words overflow-x-auto"
+                dangerouslySetInnerHTML={{ __html: selectedData.isi }}
+              />
+            </div>
+            <div className="pt-4 border-t border-slate-100 flex justify-end">
+              <button type="button" onClick={() => setIsModalOpen(false)} className="px-5 py-2 rounded-xl text-sm font-bold text-slate-500 hover:bg-slate-100 transition-colors">
+                Tutup
               </button>
             </div>
-            <form onSubmit={handleSubmit(onSubmit)} className="flex-1 overflow-y-auto p-6 space-y-5">
-              <div>
-                <label className="block text-sm font-medium text-[var(--theme-text)] mb-1">Target Role</label>
-                <select {...register('target_role')} className="w-full rounded-lg border border-[var(--theme-border-muted)] bg-[var(--theme-bg)] px-4 py-2 text-[var(--theme-text)] focus:border-[var(--theme-primary)] focus:ring-1 focus:ring-[var(--theme-primary)] outline-none transition-all">
-                  <option value="mahasiswa">Mahasiswa Saja</option>
-                  <option value="mentor">Mentor Saja</option>
-                  <option value="both">Mahasiswa & Mentor</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-[var(--theme-text)] mb-1">Judul Pengumuman</label>
-                <input {...register('judul', { required: true })} type="text" className="w-full rounded-lg border border-[var(--theme-border-muted)] bg-[var(--theme-bg)] px-4 py-2 text-[var(--theme-text)] focus:border-[var(--theme-primary)] focus:ring-1 focus:ring-[var(--theme-primary)] outline-none transition-all" placeholder="Masukkan judul..." />
-                {errors.judul && <span className="text-red-500 text-xs mt-1">Judul wajib diisi</span>}
-              </div>
-              <div className="flex flex-col flex-1 h-[300px]">
-                <label className="block text-sm font-medium text-[var(--theme-text)] mb-1">Isi Pengumuman</label>
-                <div className="flex-1 rounded-lg overflow-hidden border border-[var(--theme-border-muted)] bg-[var(--theme-bg)] relative">
-                  <ReactQuill 
-                    theme="snow" 
-                    value={isiValue} 
-                    onChange={(val) => setValue('isi', val)} 
-                    className="h-[258px] bg-white text-black"
-                  />
-                </div>
-              </div>
-              <div className="pt-4 border-t border-[var(--theme-border-muted)] flex justify-end gap-3">
-                <button type="button" onClick={() => setIsModalOpen(false)} className="px-4 py-2 rounded-lg text-[var(--theme-text-muted)] hover:bg-[var(--theme-border-muted)] transition-colors font-medium">Batal</button>
-                <button type="submit" disabled={createMutation.isPending} className="px-6 py-2 rounded-lg bg-[var(--theme-primary)] text-white font-medium shadow hover:opacity-90 disabled:opacity-50 transition-all">
-                  {createMutation.isPending ? 'Menyimpan...' : 'Terbitkan'}
-                </button>
-              </div>
-            </form>
           </div>
-        </div>
-      )}
+        ) : (
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-5 p-2">
+            <div>
+              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Target Role</label>
+              <select {...register('target_role')} className="w-full h-11 rounded-xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-700 focus:border-[var(--theme-primary)] focus:ring-1 focus:ring-[var(--theme-primary)] outline-none transition-all">
+                <option value="mahasiswa">Mahasiswa Saja</option>
+                <option value="mentor">Mentor Saja</option>
+                <option value="both">Mahasiswa & Mentor</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Judul Pengumuman</label>
+              <input {...register('judul', { required: true })} type="text" className="w-full h-11 rounded-xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-700 focus:border-[var(--theme-primary)] focus:ring-1 focus:ring-[var(--theme-primary)] outline-none transition-all placeholder:font-medium placeholder:text-slate-400" placeholder="Masukkan judul pengumuman..." />
+              {errors.judul && <span className="text-red-500 text-[11px] font-bold mt-1 block">Judul wajib diisi</span>}
+            </div>
+            <div className="flex flex-col flex-1 pb-10">
+              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Isi Pengumuman</label>
+              <div className="rounded-xl overflow-hidden border border-slate-200 bg-white relative">
+                <ReactQuill 
+                  theme="snow" 
+                  value={isiValue} 
+                  onChange={(val) => setValue('isi', val)} 
+                  className="h-[200px] bg-white text-slate-800"
+                />
+              </div>
+            </div>
+            <div className="pt-6 border-t border-slate-100 flex justify-end gap-3">
+              <button type="button" onClick={() => setIsModalOpen(false)} className="px-5 py-2.5 rounded-xl text-sm font-bold text-slate-500 hover:bg-slate-100 transition-colors">Batal</button>
+              <button type="submit" disabled={createMutation.isPending || updateMutation.isPending} className="px-6 py-2.5 rounded-xl bg-[var(--theme-primary)] text-white text-sm font-bold shadow hover:opacity-90 disabled:opacity-50 transition-all flex items-center gap-2">
+                {(createMutation.isPending || updateMutation.isPending) && <span className="material-symbols-outlined animate-spin text-[18px]">progress_activity</span>}
+                {modalMode === 'edit' ? 'Simpan Perubahan' : 'Terbitkan'}
+              </button>
+            </div>
+          </form>
+        )}
+      </DialogModal>
     </div>
   );
 }

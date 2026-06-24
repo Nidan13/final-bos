@@ -114,7 +114,7 @@ export default function KencanaPage() {
               </div>
               <h4 className="text-base font-bold text-[var(--theme-text)] leading-tight font-headline">{dashboardData.last_activity.title}</h4>
               <div className="mt-3">
-                <PrimaryButton to={`/student/kencana/session/${dashboardData.last_activity.id}`} className="text-xs py-1.5 px-4 h-auto">
+                <PrimaryButton to={`/app/student/kencana/session/${dashboardData.last_activity.id}`} className="text-xs py-1.5 px-4 h-auto">
                   Buka Sesi Terakhir <span className="material-symbols-outlined text-xs ml-1">arrow_forward</span>
                 </PrimaryButton>
               </div>
@@ -180,7 +180,7 @@ export default function KencanaPage() {
               {sortedStages.map((stage, index) => {
                 const isClickable = !hasPermission('kencana.dashboard.view') && stage.id && stage.status !== 'inactive' && stage.status !== 'not_open';
                 const CardComponent = isClickable ? Link : 'div';
-                const linkProps = isClickable ? { to: stage.phase_type === 'pasca_kencana' ? '/student/kencana/score' : `/student/kencana/stage/${stage.id}` } : {};
+                const linkProps = isClickable ? { to: stage.type === 'pasca_kencana' ? '/app/student/kencana/score' : `/app/student/kencana/stage/${stage.id}` } : {};
                 return (
                   <CardComponent
                     key={stage.type || stage.id || index}
@@ -196,7 +196,7 @@ export default function KencanaPage() {
                            <h4 className={`text-sm font-bold font-headline ${stage.status === 'active' ? 'text-[var(--theme-primary)]' : 'text-slate-800'}`}>{stage.name}</h4>
                            <StatusBadge status={stage.status} />
                          </div>
-                         {stage.phase_type !== 'pasca_kencana' && (
+                         {stage.type !== 'pasca_kencana' && (
                            <p className="text-[11px] font-semibold text-slate-500 flex items-center gap-1">
                              <span className="material-symbols-outlined text-[12px]">event</span>
                              {fmtDate(stage.start_date)} - {fmtDate(stage.end_date)}
@@ -206,7 +206,7 @@ export default function KencanaPage() {
                     </div>
                     
                     <div className="flex gap-4 mt-4 sm:mt-0 ml-14 sm:ml-0 text-center">
-                      {stage.phase_type === 'pasca_kencana' ? (
+                      {stage.type === 'pasca_kencana' ? (
                         <div className="text-xs font-bold text-[var(--theme-primary)] flex items-center gap-1 bg-[var(--theme-primary)]/10 px-3 py-1.5 rounded-lg">
                            <span className="material-symbols-outlined text-sm">workspace_premium</span> Rekap Nilai
                         </div>
@@ -239,7 +239,7 @@ export default function KencanaPage() {
           {/* Quick Actions Menus */}
           {!hasPermission('kencana.dashboard.view') && (
             <div className="grid gap-3 md:grid-cols-2">
-              <Link to="/student/kencana/handbook" className="group glass-card p-3.5 transition hover:bg-slate-50/80 flex items-center gap-3">
+              <Link to="/app/student/kencana/handbook" className="group glass-card p-3.5 transition hover:bg-slate-50/80 flex items-center gap-3">
                 <div className="grid size-9 place-items-center rounded-lg bg-emerald-50 text-emerald-600 shrink-0">
                   <span className="material-symbols-outlined text-base">book</span>
                 </div>
@@ -248,7 +248,7 @@ export default function KencanaPage() {
                    <p className="text-[10px] font-medium text-slate-500">Isi dan submit handbook Kencana</p>
                 </div>
               </Link>
-              <Link to="/student/kencana/attendance" className="group glass-card p-3.5 transition hover:bg-slate-50/80 flex items-center gap-3">
+              <Link to="/app/student/kencana/attendance" className="group glass-card p-3.5 transition hover:bg-slate-50/80 flex items-center gap-3">
                 <div className="grid size-9 place-items-center rounded-lg bg-indigo-50 text-indigo-600 shrink-0">
                   <span className="material-symbols-outlined text-base">fact_check</span>
                 </div>
@@ -257,7 +257,7 @@ export default function KencanaPage() {
                    <p className="text-[10px] font-medium text-slate-500">Cek rekapitulasi presensi sesi</p>
                 </div>
               </Link>
-              <Link to="/student/kencana/score" className="group glass-card p-3.5 transition hover:bg-slate-50/80 flex items-center gap-3">
+              <Link to="/app/student/kencana/score" className="group glass-card p-3.5 transition hover:bg-slate-50/80 flex items-center gap-3">
                 <div className="grid size-9 place-items-center rounded-lg bg-orange-50 text-orange-600 shrink-0">
                   <span className="material-symbols-outlined text-base">workspace_premium</span>
                 </div>
@@ -266,7 +266,7 @@ export default function KencanaPage() {
                    <p className="text-[10px] font-medium text-slate-500">Lihat detail nilai, item penilaian, dan e-Sertifikat</p>
                 </div>
               </Link>
-              <Link to="/student/kencana/attendance" className="group glass-card p-3.5 transition hover:bg-slate-50/80 flex items-center gap-3">
+              <Link to="/app/student/kencana/attendance" className="group glass-card p-3.5 transition hover:bg-slate-50/80 flex items-center gap-3">
                 <div className="grid size-9 place-items-center rounded-lg bg-amber-50 text-amber-600 shrink-0">
                   <span className="material-symbols-outlined text-base">edit_note</span>
                 </div>
@@ -350,7 +350,7 @@ export default function KencanaPage() {
                       <p className="text-xs font-bold">Ada Undangan DP!</p>
                    </div>
                    <p className="text-[11px] text-indigo-700/80 font-medium">Kamu memiliki undangan kelompok DP yang menunggu konfirmasi.</p>
-                   <Link to="/student/kencana/invitations" className="inline-flex items-center gap-1 mt-2 text-[10px] font-bold bg-white text-indigo-600 px-3 py-1.5 rounded border border-indigo-200 hover:bg-indigo-100 transition-colors">
+                   <Link to="/app/student/kencana/invitations" className="inline-flex items-center gap-1 mt-2 text-[10px] font-bold bg-white text-indigo-600 px-3 py-1.5 rounded border border-indigo-200 hover:bg-indigo-100 transition-colors">
                      Cek Undangan <span className="material-symbols-outlined text-[14px]">arrow_forward</span>
                    </Link>
                  </div>
@@ -369,6 +369,17 @@ export default function KencanaPage() {
                  <div className="rounded-xl bg-cyan-50 border border-cyan-100 p-3 flex items-center gap-3">
                    <span className="material-symbols-outlined text-cyan-600">supervised_user_circle</span>
                    <p className="text-sm font-bold text-cyan-800 leading-tight">{dashboardData.mentor_fakultas.name}</p>
+                 </div>
+               ) : dashboardData?.has_pending_faculty_invitation ? (
+                 <div className="rounded-xl bg-indigo-50 border border-indigo-100 p-3">
+                   <div className="flex items-center gap-2 text-indigo-600 mb-1">
+                      <span className="material-symbols-outlined text-sm">mail</span>
+                      <p className="text-xs font-bold">Ada Undangan Fakultas!</p>
+                   </div>
+                   <p className="text-[11px] text-indigo-700/80 font-medium">Kamu memiliki undangan kelompok Fakultas yang menunggu konfirmasi.</p>
+                   <Link to="/app/student/kencana/invitations" className="inline-flex items-center gap-1 mt-2 text-[10px] font-bold bg-white text-indigo-600 px-3 py-1.5 rounded border border-indigo-200 hover:bg-indigo-100 transition-colors">
+                     Cek Undangan <span className="material-symbols-outlined text-[14px]">arrow_forward</span>
+                   </Link>
                  </div>
                ) : (
                  <div className="rounded-xl bg-slate-50 border border-slate-200 p-3 flex items-center gap-2 text-slate-500">

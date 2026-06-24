@@ -24,8 +24,8 @@ export default function KencanaAssignmentPage() {
     }
   }, [data?.submission]);
 
-  if (isLoading) return <KencanaShell title="Tugas Kencana" breadcrumbs={[{ label: 'Dashboard', to: '/student/kencana' }, { label: 'Tugas' }]}><LoadingPanel /></KencanaShell>;
-  if (isError) return <KencanaShell title="Tugas Kencana" breadcrumbs={[{ label: 'Dashboard', to: '/student/kencana' }, { label: 'Tugas' }]}><ErrorPanel message="Tugas tidak ditemukan." /></KencanaShell>;
+  if (isLoading) return <KencanaShell title="Tugas Kencana" breadcrumbs={[{ label: 'Dashboard', to: '/app/student/kencana' }, { label: 'Tugas' }]}><LoadingPanel /></KencanaShell>;
+  if (isError) return <KencanaShell title="Tugas Kencana" breadcrumbs={[{ label: 'Dashboard', to: '/app/student/kencana' }, { label: 'Tugas' }]}><ErrorPanel message="Tugas tidak ditemukan." /></KencanaShell>;
   
   const assignment = data?.assignment || {};
   const submission = data?.submission || {};
@@ -65,7 +65,7 @@ export default function KencanaAssignmentPage() {
     <KencanaShell 
       title={assignment.title || 'Tugas Kencana'} 
       subtitle="Detail penugasan dan form pengumpulan" 
-      breadcrumbs={[{ label: 'Dashboard', to: '/student/kencana' }, { label: assignment.title || 'Tugas' }]}
+      breadcrumbs={[{ label: 'Dashboard', to: '/app/student/kencana' }, { label: assignment.title || 'Tugas' }]}
     >
       {/* Konfirmasi Pengumpulan Modal */}
       <DialogModal

@@ -24,6 +24,8 @@ func migrateModels(db *gorm.DB) error {
 	// ========================
 	runSQLMigrations(db)
 
+	db.SetupJoinTable(&models.Role{}, "Permissions", &models.RolePermission{})
+
 	// ========================
 	// PUBLIC (GLOBAL / AUTH / MASTER)
 	// ========================

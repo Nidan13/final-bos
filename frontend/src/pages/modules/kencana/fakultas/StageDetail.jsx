@@ -12,7 +12,7 @@ import {
   useUpdateFakultasStageMutation,
   useUndoFakultasPhaseMutation,
 } from '@/queries/useKencanaFakultasQuery';
-import { adminService } from '@/services/api';
+import { adminService, fetchWithAuth } from '@/services/api';
 import useAuthStore from '@/store/useAuthStore';
 import Mentors from '../Admin/Mentors';
 import Groups from '../Admin/Groups';
@@ -63,8 +63,8 @@ const Stages = () => {
 
   useEffect(() => {
     if (!canPickFaculty) return;
-    adminService.getAllFaculties().then(res => {
-      const rows = res?.data || [];
+    fetchWithAuth('/api/kencana-admin/faculties').then(res => {
+      const rows = res?.data?.data || res?.data || [];
       setFaculties(rows);
     }).catch(() => setFaculties([]));
   }, [canPickFaculty]);

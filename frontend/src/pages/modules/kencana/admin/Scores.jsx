@@ -46,7 +46,7 @@ const STATIC_SCORE_DEFINITIONS = {
     { key: 'Handbook', label: 'Handbook', manual: true },
   ],
   requirements: [
-    { key: 'Kehadiran', label: 'Kehadiran (Manual Override)', manual: true },
+
   ],
 };
 
@@ -105,13 +105,25 @@ const Scores = ({ portalType = 'admin' }) => {
   const { data: sessionsRes } = useSessionsByPeriodQuery(selectedPeriodId, isFacultyScoped ? 'faculty' : 'kencana_universitas');
 
   const getScoreDefinitionsContext = (backendData) => {
-    const { cognitive_static, ...rest } = STATIC_SCORE_DEFINITIONS;
+    const { cognitive_static, psychomotor, affective, requirements, ...rest } = STATIC_SCORE_DEFINITIONS;
     return {
       ...rest,
       cognitive: [
         ...(backendData?.score_definitions?.cognitive || []),
-        ...cognitive_static,
+        ...(isFacultyScoped ? [] : cognitive_static),
       ],
+      psychomotor: [
+        ...(backendData?.score_definitions?.psychomotor || []),
+        ...(isFacultyScoped ? [] : psychomotor),
+      ],
+      affective: [
+        ...(backendData?.score_definitions?.affective || []),
+        ...(isFacultyScoped ? [] : affective),
+      ],
+      requirements: [
+        ...(backendData?.score_definitions?.requirements || []),
+        ...(isFacultyScoped ? [] : requirements),
+      ]
     };
   };
 
@@ -339,11 +351,13 @@ const Scores = ({ portalType = 'admin' }) => {
         if (s.graduation_status === 'passed') st = 'success';
         if (s.graduation_status === 'conditional_pass') st = 'warning';
         if (s.graduation_status === 'not_eligible') st = 'error';
+        if (s.graduation_status === 'remedial') st = 'warning';
 
         let lb = 'Belum Lengkap';
         if (s.graduation_status === 'passed') lb = 'Lulus';
         if (s.graduation_status === 'conditional_pass') lb = 'Lulus Bersyarat';
         if (s.graduation_status === 'not_eligible') lb = 'Tidak Lulus';
+        if (s.graduation_status === 'remedial') lb = 'Remedial';
         if (s.graduation_status === 'dropped_out') lb = 'Keluar';
 
         return <StatusBadgeCell status={st} label={lb} />;
@@ -405,7 +419,7 @@ const Scores = ({ portalType = 'admin' }) => {
                 if (statusFilter && statusFilter !== 'all') params.append('status', statusFilter);
                 if (searchTerm) params.append('search', searchTerm);
                 
-                const url = `${API_BASE_URL}/kencana-admin/scores/export-pdf?${params.toString()}`;
+                const url = `${API_BASE_URL}/app/kencana/scores/export-pdf?${params.toString()}`;
                 const token = useAuthStore.getState().accessToken;
                 
                 fetch(url, { headers: { 'Authorization': `Bearer ${token}` } })
@@ -440,7 +454,7 @@ const Scores = ({ portalType = 'admin' }) => {
                 if (statusFilter && statusFilter !== 'all') params.append('status', statusFilter);
                 if (searchTerm) params.append('search', searchTerm);
                 
-                const url = `${API_BASE_URL}/kencana-admin/scores/export-excel?${params.toString()}`;
+                const url = `${API_BASE_URL}/app/kencana/scores/export-excel?${params.toString()}`;
                 const token = useAuthStore.getState().accessToken;
                 
                 fetch(url, { headers: { 'Authorization': `Bearer ${token}` } })
@@ -519,7 +533,7 @@ const Scores = ({ portalType = 'admin' }) => {
                   <th rowSpan={2} className="p-3 border-r border-[var(--theme-border-muted)] text-left min-w-[150px]">Prodi / Kelompok</th>
                   <th rowSpan={2} className="p-3 border-r border-[var(--theme-border-muted)] whitespace-nowrap">Kehadiran<br/>(100%)</th>
                   <th rowSpan={2} className="p-3 border-r border-[var(--theme-border-muted)]">Handbook</th>
-                  <th colSpan={3} className="p-3 border-b border-r border-[var(--theme-border-muted)]">Kognitif</th>
+                  <th colSpan={5} className="p-3 border-b border-r border-[var(--theme-border-muted)]">Kognitif</th>
                   <th colSpan={8} className="p-3 border-b border-r border-[var(--theme-border-muted)]">Psikomotor</th>
                   <th colSpan={6} className="p-3 border-b border-r border-[var(--theme-border-muted)]">Afektif</th>
                   <th colSpan={3} className="p-3 border-b border-r border-[var(--theme-border-muted)]">Nilai Komponen</th>
@@ -531,6 +545,8 @@ const Scores = ({ portalType = 'admin' }) => {
                   {/* Kognitif */}
                   <th className="p-3 border-r border-[var(--theme-border-muted)] whitespace-nowrap">Post Test<br/>Day 1</th>
                   <th className="p-3 border-r border-[var(--theme-border-muted)] whitespace-nowrap">Post Test<br/>Day 2</th>
+                  <th className="p-3 border-r border-[var(--theme-border-muted)] whitespace-nowrap">Tugas<br/>Day 1</th>
+                  <th className="p-3 border-r border-[var(--theme-border-muted)] whitespace-nowrap">Tugas<br/>Day 2</th>
                   <th className="p-3 border-r border-[var(--theme-border-muted)] whitespace-nowrap bg-[var(--theme-bg)]/60 text-[var(--theme-text)]">Rata-rata<br/>Kognitif</th>
                   {/* Psikomotor */}
                   <th className="p-3 border-r border-[var(--theme-border-muted)] whitespace-nowrap">Taat<br/>Peraturan</th>
@@ -567,6 +583,12 @@ const Scores = ({ portalType = 'admin' }) => {
                     if (index < quizzes.length) return Math.round(quizzes[index].score).toString();
                     return '0';
                   };
+                  const findAssignmentScore = (index) => {
+                    const assignments = it.filter(x => x.component?.toLowerCase() === 'cognitive' && x.item_name?.toLowerCase().includes('assignment'))
+                      .sort((a, b) => (a.source_id || 0) - (b.source_id || 0));
+                    if (index < assignments.length) return Math.round(assignments[index].score).toString();
+                    return '0';
+                  };
                   return (
                     <tr key={row.student_id} className="hover:bg-[var(--theme-bg)]/30 transition-colors group/row">
                       <td className="p-3 border-r border-[var(--theme-border-muted)] text-center font-bold text-[var(--theme-text-muted)]">{(page - 1) * limit + i + 1}</td>
@@ -589,6 +611,8 @@ const Scores = ({ portalType = 'admin' }) => {
                       {/* Kognitif */}
                       <td className="p-3 border-r border-[var(--theme-border-muted)] text-center">{findQuizScore(0)}</td>
                       <td className="p-3 border-r border-[var(--theme-border-muted)] text-center">{findQuizScore(1)}</td>
+                      <td className="p-3 border-r border-[var(--theme-border-muted)] text-center">{findAssignmentScore(0)}</td>
+                      <td className="p-3 border-r border-[var(--theme-border-muted)] text-center">{findAssignmentScore(1)}</td>
                       <td className="p-3 border-r border-[var(--theme-border-muted)] text-center font-bold bg-[var(--theme-bg)]/20 text-[var(--theme-text)]">{row.cognitive_average?.toFixed(1) || '0.0'}</td>
                       
                       {/* Psikomotor */}
@@ -616,19 +640,46 @@ const Scores = ({ portalType = 'admin' }) => {
                       
                       {/* Akhir */}
                       <td className="p-3 border-r border-[var(--theme-border-muted)] text-center font-bold text-[14px] text-[var(--theme-primary)] bg-[var(--theme-primary)]/5">{row.final_score?.toFixed(1) || '0.0'}</td>
-                      <td className="p-3 border-r border-[var(--theme-border-muted)]">
-                        <StatusBadgeCell value={row.graduation_status || 'belum_lengkap'} />
+                      <td className="p-3 border-r border-[var(--theme-border-muted)] text-center">
+                        {(() => {
+                          const status = row.graduation_status || 'belum_lengkap';
+                          let st = 'default';
+                          let label = 'Belum Lengkap';
+                          if (status === 'passed') { st = 'success'; label = 'Lulus'; }
+                          else if (status === 'conditional_pass') { st = 'warning'; label = 'Remedial'; }
+                          else if (status === 'not_eligible') { st = 'error'; label = 'Tidak Lulus'; }
+                          return (
+                            <div className="flex flex-col items-center gap-1">
+                              <StatusBadgeCell status={st} label={label} />
+                              {row.notes && status === 'not_eligible' && (
+                                <p className="text-[9px] text-rose-500 font-bold leading-tight max-w-[120px] mx-auto whitespace-normal" title={row.notes}>
+                                  ({row.notes})
+                                </p>
+                              )}
+                            </div>
+                          );
+                        })()}
                       </td>
                       <td className="p-3 border-l-4 border-l-[var(--theme-bg)] sticky right-0 bg-white shadow-[-4px_0_10px_rgba(0,0,0,0.05)] z-10 text-center">
-                        <button
-                          onClick={() => {
-                            setBulkSelectedStudentId(row.student_id);
-                            setShowBulkInputModal(true);
-                          }}
-                          className="w-8 h-8 rounded-lg bg-[var(--theme-bg)] text-[var(--theme-text-muted)] hover:text-[var(--theme-primary)] hover:bg-[var(--theme-primary)]/10 flex items-center justify-center transition-colors mx-auto"
-                        >
-                          <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>edit</span>
-                        </button>
+                        <div className="flex items-center justify-center gap-1.5">
+                          <button
+                            onClick={() => { setSelectedStudent(row.student); setIsEditing(false); }}
+                            className="w-8 h-8 rounded-lg bg-[var(--theme-bg)] text-[var(--theme-text-muted)] hover:text-emerald-600 hover:bg-emerald-50 flex items-center justify-center transition-colors"
+                            title="Detail Mahasiswa"
+                          >
+                            <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>visibility</span>
+                          </button>
+                          <button
+                            onClick={() => {
+                              setBulkSelectedStudentId(row.student_id);
+                              setShowBulkInputModal(true);
+                            }}
+                            className="w-8 h-8 rounded-lg bg-[var(--theme-bg)] text-[var(--theme-text-muted)] hover:text-[var(--theme-primary)] hover:bg-[var(--theme-primary)]/10 flex items-center justify-center transition-colors"
+                            title="Input Manual"
+                          >
+                            <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>edit</span>
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   );
@@ -830,6 +881,34 @@ const Scores = ({ portalType = 'admin' }) => {
                       </div>
                     );
                   })}
+                  
+                  {/* Notes breakdown list */}
+                  {(() => {
+                    const notesList = detailedItems?.items?.filter(it => it.component === 'note') || [];
+                    if (notesList.length === 0) return null;
+                    return (
+                      <div className="space-y-2 mt-4">
+                        <h4 className="text-xs font-semibold uppercase tracking-wider text-[var(--theme-text-muted)] flex items-center gap-2">
+                          <span className="w-2 h-2 rounded-full bg-blue-500"></span>
+                          Catatan Bimbingan Mentor
+                        </h4>
+                        <div className="border border-[var(--theme-border)] rounded-2xl overflow-hidden divide-y divide-[var(--theme-border-muted)] text-xs bg-surface">
+                          {notesList.map((note, idx) => (
+                            <div key={idx} className="p-3 flex items-start justify-between bg-[var(--theme-surface)] hover:bg-[var(--theme-bg)] transition-colors">
+                              <div className="flex-1">
+                                 <div className="font-bold text-[var(--theme-text)]">{note.item_name || 'Catatan Mentor'}</div>
+                                 <div className="text-[11px] text-[var(--theme-text-subtle)] italic mt-1 leading-relaxed">"{note.notes}"</div>
+                              </div>
+                              <div className="ml-4 flex flex-col items-end gap-1 shrink-0">
+                                 <span className="text-[9px] font-bold text-[var(--theme-text-muted)] uppercase">{new Date(note.created_at).toLocaleDateString('id-ID')}</span>
+                                 <span className="text-[9px] font-semibold bg-blue-50 text-blue-600 rounded px-1.5 py-0.5 uppercase border border-blue-100">mentor</span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })()}
                 </div>
               </div>
             )}

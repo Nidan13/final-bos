@@ -238,7 +238,16 @@ func RequirePermission(permKey string) fiber.Handler {
 			return c.Next()
 		}
 
-		log.Printf("[PermCheck] Access denied for role: %s, required permission: %s", role, permKey)
+		// Fallback: If token permissions didn't match, try loading from DB once to handle stale tokens
+		dbPermissions := loadRolePermissions(c, role)
+		if len(dbPermissions) > 0 {
+			if userHasPermission(dbPermissions, permKey) {
+				c.Locals("permissions", dbPermissions)
+				return c.Next()
+			}
+		}
+
+		log.Printf("[PermCheck RequirePermission] Access denied for role: %s, required: %s, user has permissions length: %d, permissions: %v", role, permKey, len(permissions), permissions)
 		return c.Status(403).JSON(fiber.Map{
 			"status":  "error",
 			"message": "Akses ditolak. Anda tidak memiliki izin untuk melakukan tindakan ini.",
@@ -273,7 +282,19 @@ func RequireAnyPermission(permKeys ...string) fiber.Handler {
 			}
 		}
 
-		log.Printf("[PermCheck] Access denied for role: %s, required any of: %v", role, permKeys)
+		// Fallback: If token permissions didn't match, maybe they were updated in DB recently. Let's try DB once.
+		dbPermissions := loadRolePermissions(c, role)
+		if len(dbPermissions) > 0 {
+			for _, key := range permKeys {
+				if userHasPermission(dbPermissions, key) {
+					// Update locals so subsequent middleware in this request use the fresh permissions
+					c.Locals("permissions", dbPermissions)
+					return c.Next()
+				}
+			}
+		}
+
+		log.Printf("[PermCheck RequireAnyPermission] Access denied for role: %s, required any of: %v, user has permissions length: %d, permissions: %v", role, permKeys, len(permissions), permissions)
 		return c.Status(403).JSON(fiber.Map{
 			"status":  "error",
 			"message": "Akses ditolak. Anda tidak memiliki izin untuk melakukan tindakan ini.",

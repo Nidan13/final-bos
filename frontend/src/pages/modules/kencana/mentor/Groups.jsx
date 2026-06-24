@@ -81,8 +81,8 @@ const Groups = () => {
                       try {
                         const baseUrl = import.meta.env.VITE_API_URL || '/api';
                         const urlToFetch = baseUrl.endsWith('/api') 
-                          ? baseUrl.replace(/\/api$/, `/api/kencana-mentor/groups/${group.id}/pdf`)
-                          : `${baseUrl}/kencana-mentor/groups/${group.id}/pdf`;
+                          ? baseUrl.replace(/\/api$/, `/api/app/kencana/mentor/groups/${group.id}/pdf`)
+                          : `${baseUrl}/app/kencana/mentor/groups/${group.id}/pdf`;
                         
                         const token = useAuthStore.getState().accessToken || '';
                         const res = await fetch(urlToFetch, {

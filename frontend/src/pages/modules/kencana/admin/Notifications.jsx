@@ -31,8 +31,8 @@ const TIPE_COLORS = {
 
 export default function Notifications() {
   const location = useLocation();
-  const isAdmin = location.pathname.includes('/app/kencana/dashboard');
-  const parentPath = isAdmin ? '/app/kencana/dashboard' : '/app/kencana/mentor';
+  const isAdmin = location.pathname.includes('/app/kencana');
+  const parentPath = isAdmin ? '/app/kencana' : '/kencana-mentor';
   const parentLabel = isAdmin ? 'Admin Kencana' : 'Mentor Kencana';
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -46,7 +46,7 @@ export default function Notifications() {
           id: n.id ?? n.ID,
           tipe: (n.tipe ?? n.Tipe ?? 'sistem').toLowerCase(),
           judul: n.judul ?? n.Judul ?? n.title ?? 'Notifikasi',
-          pesan: n.pesan ?? n.Pesan ?? n.desc ?? '',
+          pesan: n.pesan ?? n.Pesan ?? n.deskripsi ?? n.Deskripsi ?? n.desc ?? '',
           is_read: n.is_read ?? n.IsRead ?? false,
           created_at: n.created_at ?? n.CreatedAt,
           link: n.link ?? n.Link,
@@ -189,9 +189,10 @@ export default function Notifications() {
                           )}>
                             {notif.judul}
                           </p>
-                          <p className="text-xs font-semibold text-[var(--theme-text-muted)] leading-relaxed max-w-4xl break-words">
-                            {notif.pesan}
-                          </p>
+                          <div 
+                            className="text-xs font-semibold text-[var(--theme-text-muted)] leading-relaxed max-w-4xl break-words line-clamp-2"
+                            dangerouslySetInnerHTML={{ __html: notif.pesan }}
+                          />
                         </div>
 
                         {/* Status Pin & Time */}

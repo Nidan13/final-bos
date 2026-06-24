@@ -2,7 +2,7 @@ import React, { useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/axios';
-import CertificateTemplate from '@/components/CertificateTemplate';
+import CertificateTemplate from '@/pages/modules/kencana/components/CertificateTemplate';
 
 const CertificateViewer = () => {
   const { id } = useParams();

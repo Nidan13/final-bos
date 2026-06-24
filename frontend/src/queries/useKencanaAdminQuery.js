@@ -578,6 +578,14 @@ export const useDeleteAnnouncementMutation = (portal = 'admin') => {
   });
 };
 
+export const useUpdateAnnouncementMutation = (portal = 'admin') => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, ...payload }) => unwrap(await api.put(`${kencanaBase(portal)}/announcements/${id}`, payload)),
+    onSuccess: () => qc.invalidateQueries({ queryKey: [`kencana-${portal}`, 'announcements'] }),
+  });
+};
+
 // ─── Dev: Reset All Kencana Data ───
 export const useResetKencanaMutation = () => {
   const qc = useQueryClient();
@@ -586,3 +594,9 @@ export const useResetKencanaMutation = () => {
     onSuccess: () => qc.invalidateQueries({ queryKey: ['kencana-admin'] }),
   });
 };
+
+// ─── Faculty Compliance Monitoring ───
+export const useFacultyComplianceQuery = (params = {}) => useQuery({
+  queryKey: ['kencana-admin', 'faculty-compliance', params],
+  queryFn: async () => unwrap(await api.get('/kencana-admin/monitoring/faculty-compliance', { params })),
+});

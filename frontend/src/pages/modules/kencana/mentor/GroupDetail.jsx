@@ -96,11 +96,13 @@ const GroupDetail = () => {
             <thead>
               <tr className="border-b border-[var(--theme-border)] bg-[var(--theme-bg)]/80 text-[10px] font-bold text-[var(--theme-text-muted)] uppercase tracking-wider text-center">
                 <th rowSpan={2} className="p-3 border-r border-[var(--theme-border-muted)]">No.</th>
+                <th rowSpan={2} className="p-3 border-r border-[var(--theme-border-muted)] text-left min-w-[100px]">NIM</th>
                 <th rowSpan={2} className="p-3 border-r border-[var(--theme-border-muted)] text-left min-w-[200px]">Nama</th>
                 <th rowSpan={2} className="p-3 border-r border-[var(--theme-border-muted)] text-left min-w-[150px]">Prodi</th>
+                <th rowSpan={2} className="p-3 border-r border-[var(--theme-border-muted)] text-left min-w-[150px]">Fakultas</th>
                 <th rowSpan={2} className="p-3 border-r border-[var(--theme-border-muted)] whitespace-nowrap">Kehadiran<br/>(100%)</th>
                 <th rowSpan={2} className="p-3 border-r border-[var(--theme-border-muted)]">Handbook</th>
-                <th colSpan={3} className="p-3 border-b border-r border-[var(--theme-border-muted)]">Kognitif</th>
+                <th colSpan={5} className="p-3 border-b border-r border-[var(--theme-border-muted)]">Kognitif</th>
                 <th colSpan={8} className="p-3 border-b border-r border-[var(--theme-border-muted)]">Psikomotor</th>
                 <th colSpan={6} className="p-3 border-b border-r border-[var(--theme-border-muted)]">Afektif</th>
                 <th colSpan={3} className="p-3 border-b border-r border-[var(--theme-border-muted)]">Nilai Komponen</th>
@@ -112,6 +114,8 @@ const GroupDetail = () => {
                 {/* Kognitif */}
                 <th className="p-3 border-r border-[var(--theme-border-muted)] whitespace-nowrap">Post Test<br/>Day 1</th>
                 <th className="p-3 border-r border-[var(--theme-border-muted)] whitespace-nowrap">Post Test<br/>Day 2</th>
+                <th className="p-3 border-r border-[var(--theme-border-muted)] whitespace-nowrap">Tugas<br/>Day 1</th>
+                <th className="p-3 border-r border-[var(--theme-border-muted)] whitespace-nowrap">Tugas<br/>Day 2</th>
                 <th className="p-3 border-r border-[var(--theme-border-muted)] whitespace-nowrap bg-[var(--theme-bg)]/60 text-[var(--theme-text)]">Rata-rata<br/>Kognitif</th>
                 {/* Psikomotor */}
                 <th className="p-3 border-r border-[var(--theme-border-muted)] whitespace-nowrap">Taat<br/>Peraturan</th>
@@ -149,9 +153,16 @@ const GroupDetail = () => {
                   if (index < quizzes.length) return Math.round(quizzes[index].score).toString();
                   return '0';
                 };
+                const findAssignmentScore = (index) => {
+                  const assignments = it.filter(x => x.component?.toLowerCase() === 'cognitive' && x.item_name?.toLowerCase().includes('assignment'))
+                    .sort((a, b) => (a.source_id || 0) - (b.source_id || 0));
+                  if (index < assignments.length) return Math.round(assignments[index].score).toString();
+                  return '0';
+                };
                 return (
                   <tr key={member.id} className="hover:bg-[var(--theme-bg)]/30 transition-colors group/row">
                     <td className="p-3 border-r border-[var(--theme-border-muted)] text-center font-bold text-[var(--theme-text-muted)]">{i + 1}</td>
+                    <td className="p-3 border-r border-[var(--theme-border-muted)] font-bold text-[12px] text-[var(--theme-primary)]">{member.student?.nim || '-'}</td>
                     <td className="p-3 border-r border-[var(--theme-border-muted)]">
                       <div className="flex items-center gap-2">
                         {member.status === 'active' ? (
@@ -161,18 +172,18 @@ const GroupDetail = () => {
                         ) : (
                           <div className="w-2 h-2 rounded-full bg-[var(--theme-danger)]" title="Ditolak" />
                         )}
-                        <div>
-                          <p className="font-bold text-sm leading-tight text-[var(--theme-text)]">{member.student?.nama || '-'}</p>
-                          <p className="text-[10px] text-[var(--theme-text-muted)] font-bold">{member.student?.nim || '-'}</p>
-                        </div>
+                        <p className="font-bold text-sm leading-tight text-[var(--theme-text)]">{member.student?.nama || '-'}</p>
                       </div>
                     </td>
-                    <td className="p-3 border-r border-[var(--theme-border-muted)] font-semibold text-[11px] leading-tight text-[var(--theme-text-muted)]">{member.student?.program_studi_name || '-'}</td>
-                    <td className="p-3 border-r border-[var(--theme-border-muted)] text-center font-bold text-[var(--theme-primary)]">{sc.attendance_count || 0}</td>
+                    <td className="p-3 border-r border-[var(--theme-border-muted)] font-semibold text-[11px] leading-tight text-[var(--theme-text-muted)]">{member.student?.program_studi_name || member.student?.program_studi || '-'}</td>
+                    <td className="p-3 border-r border-[var(--theme-border-muted)] font-semibold text-[11px] leading-tight text-[var(--theme-text-muted)]">{member.student?.fakultas_name || member.student?.fakultas || '-'}</td>
+                    <td className="p-3 border-r border-[var(--theme-border-muted)] text-center font-bold text-[var(--theme-primary)]">{Math.round(sc.attendance_percentage || 0)}%</td>
                     <td className="p-3 border-r border-[var(--theme-border-muted)] text-center font-semibold">{findItemScore('cognitive', 'handbook')}</td>
                     {/* Kognitif */}
                     <td className="p-3 border-r border-[var(--theme-border-muted)] text-center">{findQuizScore(0)}</td>
                     <td className="p-3 border-r border-[var(--theme-border-muted)] text-center">{findQuizScore(1)}</td>
+                    <td className="p-3 border-r border-[var(--theme-border-muted)] text-center">{findAssignmentScore(0)}</td>
+                    <td className="p-3 border-r border-[var(--theme-border-muted)] text-center">{findAssignmentScore(1)}</td>
                     <td className="p-3 border-r border-[var(--theme-border-muted)] text-center font-bold bg-[var(--theme-bg)]/20 text-[var(--theme-text)]">{sc.cognitive_average?.toFixed(1) || '0.0'}</td>
                     {/* Psikomotor */}
                     <td className="p-3 border-r border-[var(--theme-border-muted)] text-center">{findItemScore('psychomotor', 'taat')}</td>
@@ -198,12 +209,23 @@ const GroupDetail = () => {
                     <td className="p-3 border-r border-[var(--theme-border-muted)] text-center font-black text-[14px] text-[var(--theme-primary)]">{sc.final_score?.toFixed(1) || '0.0'}</td>
                     <td className="p-3 border-r border-[var(--theme-border-muted)] text-center">
                       <span className={`px-2 py-1 rounded border text-[9px] font-bold uppercase tracking-wider whitespace-nowrap ${
-                        sc.graduation_status === 'lulus' ? 'bg-[var(--theme-success-light)] border-[var(--theme-success-light)] text-[var(--theme-success)]' :
-                        sc.graduation_status === 'tidak_lulus' ? 'bg-[var(--theme-danger-light)] border-[var(--theme-danger-light)] text-[var(--theme-danger)]' :
+                        sc.graduation_status === 'passed' ? 'bg-[var(--theme-success-light)] border-[var(--theme-success-light)] text-[var(--theme-success)]' :
+                        sc.graduation_status === 'not_eligible' ? 'bg-[var(--theme-danger-light)] border-[var(--theme-danger-light)] text-[var(--theme-danger)]' :
+                        sc.graduation_status === 'in_progress' ? 'bg-[var(--theme-border-muted)] border-[var(--theme-border)] text-[var(--theme-text-muted)]' :
                         'bg-[var(--theme-warning-light)] border-[var(--theme-warning-light)] text-[var(--theme-warning)]'
                       }`}>
-                        {(sc.graduation_status || 'in progress').replace('_', ' ')}
+                        {sc.graduation_status === 'passed' ? 'LULUS' :
+                         sc.graduation_status === 'not_eligible' ? 'TIDAK LULUS' :
+                         sc.graduation_status === 'remedial' ? 'REMEDIAL' :
+                         sc.graduation_status === 'conditional_pass' ? 'LULUS BERSYARAT' :
+                         sc.graduation_status === 'in_progress' ? 'BELUM LENGKAP' :
+                         (sc.graduation_status || 'BELUM LENGKAP').replace('_', ' ')}
                       </span>
+                      {sc.notes && sc.graduation_status === 'not_eligible' && (
+                        <p className="text-[9px] text-rose-500 font-bold leading-tight mt-1 max-w-[120px] mx-auto whitespace-normal" title={sc.notes}>
+                          ({sc.notes})
+                        </p>
+                      )}
                     </td>
                     {/* Aksi (Sticky Right) */}
                     <td className="p-3 text-center flex items-center justify-center gap-2 border-l-4 border-l-[var(--theme-bg)] sticky right-0 bg-white group-hover/row:bg-[var(--theme-bg)] transition-colors shadow-[-4px_0_10px_rgba(0,0,0,0.05)] z-10">

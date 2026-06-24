@@ -273,7 +273,7 @@ func calculateAndStoreScore(db *gorm.DB, periodID, studentID uint) (*models.Kenc
 	if student.FakultasID != 0 {
 		fakultasID = &student.FakultasID
 	}
-	calculateAndStoreScoreForScope(db, periodID, studentID, "fakultas", fakultasID, true)
+	calculateAndStoreScoreForScope(db, periodID, studentID, "faculty", fakultasID, true)
 	
 	return scoreUniv, blockersUniv, errUniv
 }
@@ -287,7 +287,7 @@ func calculateAndStoreScoreForScope(db *gorm.DB, periodID, studentID uint, scope
 
 	var items []models.KencanaScoreItem
 	qItems := db.Where("period_id = ? AND student_id = ? AND scope_type = ?", periodID, studentID, scopeType)
-	if scopeType == "fakultas" && fakultasID != nil && *fakultasID != 0 {
+	if scopeType == "faculty" && fakultasID != nil && *fakultasID != 0 {
 		qItems = qItems.Where("fakultas_id = ?", fakultasID)
 	}
 	if err := qItems.Find(&items).Error; err != nil {
@@ -335,7 +335,7 @@ func calculateAndStoreScoreForScope(db *gorm.DB, periodID, studentID uint, scope
 	{
 		var cnt int64
 		db.Model(&models.KencanaScoreItem{}).
-			Where("period_id = ? AND component = ?", periodID, "psychomotor").
+			Where("period_id = ? AND component = ? AND scope_type = ?", periodID, "psychomotor", scopeType).
 			Select("COUNT(DISTINCT item_name)").Scan(&cnt)
 		expectedPsychomotor = int(cnt)
 		if expectedPsychomotor == 0 {
@@ -346,7 +346,7 @@ func calculateAndStoreScoreForScope(db *gorm.DB, periodID, studentID uint, scope
 	{
 		var cnt int64
 		db.Model(&models.KencanaScoreItem{}).
-			Where("period_id = ? AND component = ?", periodID, "affective").
+			Where("period_id = ? AND component = ? AND scope_type = ?", periodID, "affective", scopeType).
 			Select("COUNT(DISTINCT item_name)").Scan(&cnt)
 		expectedAffective = int(cnt)
 		if expectedAffective == 0 {
@@ -390,7 +390,7 @@ func calculateAndStoreScoreForScope(db *gorm.DB, periodID, studentID uint, scope
 
 	final := roundScore(cog*cw + psy*pw + aff*aw)
 	now := time.Now().UTC()
-	status, blockers := graduationStatus(db, periodID, studentID, final, items, isComplete)
+	status, blockers := graduationStatus(db, periodID, studentID, final, items, isComplete, scopeType, fakultasID)
 	score := models.KencanaScore{
 		PeriodID: periodID, StudentID: studentID, ScopeType: scopeType, FakultasID: fakultasID,
 		CognitiveAverage: cog, PsychomotorAverage: psy, AffectiveAverage: aff,
@@ -460,8 +460,8 @@ func calculateAndStoreScoreForScope(db *gorm.DB, periodID, studentID uint, scope
 	return &score, blockers, nil
 }
 
-func graduationStatus(db *gorm.DB, periodID, studentID uint, finalScore float64, items []models.KencanaScoreItem, isComplete bool) (string, []string) {
-	blockers := []string{}
+func graduationStatus(db *gorm.DB, periodID, studentID uint, finalScore float64, items []models.KencanaScoreItem, isComplete bool, scopeType string, fakultasID *uint) (string, []string) {
+	var blockers []string
 
 	var period models.KencanaPeriod
 	db.First(&period, periodID)
@@ -494,7 +494,7 @@ func graduationStatus(db *gorm.DB, periodID, studentID uint, finalScore float64,
 	}
 
 	if !kehadiranOverride {
-		attendance := attendanceSummary(db, periodID, studentID)
+		attendance := attendanceSummary(db, periodID, studentID, scopeType, fakultasID)
 		if attendance.RequiredSessions > 0 && attendance.Percentage < 100 {
 			blockers = append(blockers, "Kehadiran belum 100%")
 		}
@@ -502,7 +502,7 @@ func graduationStatus(db *gorm.DB, periodID, studentID uint, finalScore float64,
 
 	if !handbookOverride {
 		var handbook models.KencanaHandbook
-		if err := db.Where("period_id = ? AND student_id = ?", periodID, studentID).First(&handbook).Error; err != nil || handbook.Status != "approved" {
+		if err := db.Where("period_id = ? AND student_id = ? AND scope_type = ?", periodID, studentID, scopeType).First(&handbook).Error; err != nil || handbook.Status != "approved" {
 			blockers = append(blockers, "Handbook belum disetujui")
 		}
 	}
@@ -540,12 +540,23 @@ type attendanceInfo struct {
 	Status           string  `json:"status"`
 }
 
-func attendanceSummary(db *gorm.DB, periodID, studentID uint) attendanceInfo {
+func attendanceSummary(db *gorm.DB, periodID, studentID uint, scopeType string, fakultasID *uint) attendanceInfo {
 	var sessionIDs []uint
-	db.Model(&models.KencanaSession{}).
+	
+	qSessions := db.Model(&models.KencanaSession{}).
 		Joins("JOIN mahasiswa.kencana_stages ON mahasiswa.kencana_stages.id = mahasiswa.kencana_sessions.stage_id").
-		Where("mahasiswa.kencana_stages.period_id = ? AND mahasiswa.kencana_sessions.is_required = ? AND mahasiswa.kencana_sessions.status = ?", periodID, true, "active").
-		Pluck("mahasiswa.kencana_sessions.id", &sessionIDs)
+		Where("mahasiswa.kencana_stages.period_id = ? AND mahasiswa.kencana_sessions.is_required = ? AND mahasiswa.kencana_sessions.status = ?", periodID, true, "active")
+
+	if scopeType == "university" {
+		qSessions = qSessions.Where("mahasiswa.kencana_stages.type IN ?", []string{"kencana_universitas", "pra_kencana"})
+	} else if scopeType == "fakultas" {
+		qSessions = qSessions.Where("mahasiswa.kencana_stages.type = ?", "kencana_fakultas")
+		if fakultasID != nil && *fakultasID != 0 {
+			qSessions = qSessions.Where("mahasiswa.kencana_stages.fakultas_id = ?", fakultasID)
+		}
+	}
+
+	qSessions.Pluck("mahasiswa.kencana_sessions.id", &sessionIDs)
 	info := attendanceInfo{RequiredSessions: len(sessionIDs), Status: "Belum Lengkap"}
 	if len(sessionIDs) == 0 {
 		info.Status = "Lengkap"

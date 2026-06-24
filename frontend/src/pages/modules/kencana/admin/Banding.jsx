@@ -23,8 +23,8 @@ const Banding = ({ portalType = 'admin' }) => {
   const [limit, setLimit] = useState(10);
   const [statusFilter, setStatusFilter] = useState('pending');
   const [searchTerm, setSearchTerm] = useState('');
+
   const [fakultasFilter, setFakultasFilter] = useState(() => getKencanaInitialFakultas(role, isFacultyScoped, user?.fakultas_id));
-  
   const [selectedBanding, setSelectedBanding] = useState(null);
   const [responseStatus, setResponseStatus] = useState('approved');
   const [adminResponse, setAdminResponse] = useState('');

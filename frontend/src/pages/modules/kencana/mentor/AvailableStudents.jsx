@@ -53,12 +53,8 @@ const AvailableStudents = () => {
     },
     { key: 'nim', label: 'NIM', sortable: true, render: (val) => <span className="font-bold text-[var(--theme-primary)]">{val}</span> },
     { key: 'nama', label: 'Nama Mahasiswa', sortable: true, render: (_, row) => <span className="font-bold text-[var(--theme-text)]">{row.nama || row.name}</span> },
-    { key: 'fakultas', label: 'Fakultas / Prodi', sortable: true, render: (_, row) => (
-      <div className="flex flex-col">
-        <span className="text-[var(--theme-text)] font-semibold">{row.fakultas || '-'}</span>
-        <span className="text-[10px] text-[var(--theme-text-muted)] font-bold uppercase mt-0.5">{row.program_studi || '-'}</span>
-      </div>
-    )},
+    { key: 'program_studi', label: 'Program Studi', sortable: true, render: (_, row) => <span className="text-[13px] font-medium text-[var(--theme-text-muted)]">{row.program_studi || '-'}</span> },
+    { key: 'fakultas', label: 'Fakultas', sortable: true, render: (_, row) => <span className="text-[13px] font-medium text-[var(--theme-text-muted)]">{row.fakultas || '-'}</span> },
     { key: 'already_has_mentor', label: 'Status', sortable: true, render: (hasMentor, row) => (
       hasMentor === 'true' ? (
         <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--theme-warning-light)] px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-[var(--theme-warning)] border border-[var(--theme-warning-light)]">

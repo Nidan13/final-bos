@@ -686,10 +686,20 @@ func CompleteFacultyPhase(c *fiber.Ctx) error {
 	}
 
 	var assignedStudents int64
-	if err := config.DB.Model(&models.KencanaMentorAssignment{}).
-		Joins("JOIN mahasiswa.mahasiswa m ON m.id = mahasiswa.kencana_mentor_assignments.student_id").
-		Where("mahasiswa.kencana_mentor_assignments.period_id = ? AND m.fakultas_id = ? AND mahasiswa.kencana_mentor_assignments.status = 'active'", period.ID, phase.FakultasID).
-		Count(&assignedStudents).Error; err != nil {
+	if err := config.DB.Raw(`
+		SELECT COUNT(DISTINCT m.id)
+		FROM mahasiswa.mahasiswa m
+		WHERE m.fakultas_id = ? AND m.tahun_masuk = ? AND m.status_akademik IN ('Aktif')
+		AND EXISTS (
+			SELECT 1 FROM mahasiswa.kencana_mentor_assignments kma
+			JOIN mahasiswa.kencana_mentors km ON km.id = kma.mentor_id
+			WHERE kma.student_id = m.id AND kma.period_id = ? AND kma.status IN ('active', 'pending') AND km.scope_type = 'faculty'
+			UNION ALL
+			SELECT 1 FROM mahasiswa.kencana_group_members kgm
+			JOIN mahasiswa.kencana_groups kg ON kg.id = kgm.group_id
+			WHERE kgm.student_id = m.id AND kgm.period_id = ? AND kgm.status IN ('active', 'pending') AND kg.scope_type = 'faculty'
+		)
+	`, phase.FakultasID, period.Year, period.ID, period.ID).Scan(&assignedStudents).Error; err != nil {
 		return c.Status(500).JSON(fiber.Map{"success": false, "message": "Gagal menghitung mahasiswa yang sudah diplot"})
 	}
 

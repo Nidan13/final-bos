@@ -292,32 +292,42 @@ function InvitationSection({ title, description, items, activeMentor, respond, h
           <h3 className="text-sm font-bold text-[var(--theme-text)] leading-tight">{title}</h3>
         </div>
       </div>
-      <div className="grid gap-3">
+      <div className="grid gap-4">
         {items.map((inv) => {
           const mentor = inv.mentor || inv.Mentor || {};
           const status = inv.status || inv.Status;
           return (
-            <article key={inv.id || inv.ID} className="rounded-xl border border-[var(--theme-border)] border-dashed bg-[var(--theme-bg)] p-5">
-              <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 rounded-full bg-[var(--theme-border)] text-[var(--theme-text-muted)] flex items-center justify-center shrink-0">
-                    <span className="material-symbols-outlined text-[20px]">person</span>
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-bold text-[var(--theme-text)]">{mentor.name || mentor.Name || 'Dewan Pembimbing'}</h3>
-                    <p className="text-xs font-medium text-[var(--theme-text-muted)]">{mentor.email || mentor.Email || '-'}</p>
-                  </div>
-                </div>
-                <div className="flex flex-col items-start md:items-end gap-3">
-                  <StatusBadge status={status} />
-                  {status === 'pending' && (
-                    <div className="flex gap-2">
-                      <button onClick={() => handleRespond(inv.id || inv.ID, 'accept')} disabled={respond.isPending || !!activeMentor} className="rounded-lg bg-[var(--theme-primary)] px-4 py-2 text-xs font-bold text-white hover:opacity-90 transition-opacity shadow-sm disabled:opacity-50">Terima</button>
-                      <button onClick={() => handleRespond(inv.id || inv.ID, 'reject')} disabled={respond.isPending} className="rounded-lg border border-[var(--theme-border)] bg-[var(--theme-surface)] px-4 py-2 text-xs font-bold text-[var(--theme-text)] hover:bg-[var(--theme-bg)] transition-colors disabled:opacity-50">Tolak</button>
+            <article key={inv.id || inv.ID} className="rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-6 shadow-sm transition-all duration-300">
+              <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                <div className="flex-1">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-[var(--theme-text-muted)]">Undangan Personal (1-on-1)</p>
+                  <h3 className="mt-1 text-xl font-bold font-headline text-[var(--theme-text)]">{mentor.name || mentor.Name || 'Dewan Pembimbing'}</h3>
+                  <p className="mt-1 text-xs font-semibold text-[var(--theme-text-muted)]">{mentor.email || mentor.Email || '-'}</p>
+                  
+                  <div className="mt-4 p-4 bg-[var(--theme-bg)] rounded-xl border border-[var(--theme-border)] flex items-center gap-3 w-full max-w-sm">
+                    <div className="w-10 h-10 rounded-full bg-[var(--theme-primary)]/10 text-[var(--theme-primary)] flex items-center justify-center shrink-0">
+                      <span className="material-symbols-outlined text-[20px]">person</span>
                     </div>
-                  )}
+                    <div className="min-w-0">
+                      <p className="text-[10px] font-black uppercase tracking-widest text-[var(--theme-text-muted)]">Informasi Tambahan</p>
+                      <p className="font-bold text-[var(--theme-text)] text-sm truncate">Lingkup Fakultas</p>
+                    </div>
+                  </div>
                 </div>
+                
+                <StatusBadge status={status} />
               </div>
+
+              {status === 'pending' && (
+                <div className="mt-6 flex flex-wrap gap-3 pt-4 border-t border-[var(--theme-border)]">
+                  <button onClick={() => handleRespond(inv.id || inv.ID, 'accept')} disabled={respond.isPending || !!activeMentor} className="rounded-xl bg-[var(--theme-primary)] px-6 py-2.5 text-sm font-bold text-white hover:opacity-90 transition-opacity shadow-sm disabled:opacity-50 flex items-center gap-2">
+                    Terima Undangan
+                  </button>
+                  <button onClick={() => handleRespond(inv.id || inv.ID, 'reject')} disabled={respond.isPending} className="rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] px-6 py-2.5 text-sm font-bold text-[var(--theme-text)] hover:bg-[var(--theme-bg)] hover:text-[var(--theme-error)] transition-colors disabled:opacity-50">
+                    Tolak
+                  </button>
+                </div>
+              )}
             </article>
           );
         })}

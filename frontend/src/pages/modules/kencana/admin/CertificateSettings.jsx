@@ -4,7 +4,7 @@ import toast from 'react-hot-toast';
 import { PageHeader } from '@/components/ui/page/PageHeader';
 import { useCertificateSettingsQuery, useUpdateCertificateSettingsMutation, useUploadCertificateLogoMutation, useUploadCertificateLeftLogoMutation, useUploadCertificateRightLogoMutation } from '@/queries/useKencanaAdminQuery';
 import { ASSET_URL } from '@/services/api';
-import CertificateTemplate from '@/components/CertificateTemplate';
+import CertificateTemplate from '@/pages/modules/kencana/components/CertificateTemplate';
 
 const CertificateSettings = () => {
   const { data: settingsData, isLoading } = useCertificateSettingsQuery();
@@ -116,7 +116,7 @@ const CertificateSettings = () => {
         title={<><span className="text-[var(--theme-text)]">Pengaturan & Preview </span><span className="text-[var(--theme-primary)]">Sertifikat</span></>}
         subtitle="Atur variabel teks dan tanda tangan secara real-time."
         breadcrumbs={[
-          { label: 'Kencana Admin', path: '/app/kencana/dashboard' },
+          { label: 'Kencana Admin', path: '/app/kencana' },
           { label: 'Sertifikat', path: '/app/kencana/certificates' },
           { label: 'Pengaturan' }
         ]}

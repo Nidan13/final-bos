@@ -28,6 +28,7 @@ const ScoreSummary = ({ portalType = 'admin' }) => {
   const isFacultyScoped = portalType === 'faculty' || portalType === 'fakultas' || role === 'kencana_fakultas';
   const navigate = useNavigate();
   const [selectedPeriodId, setSelectedPeriodId] = useState('');
+
   const [fakultasFilter, setFakultasFilter] = useState(() => getKencanaInitialFakultas(role, isFacultyScoped, user?.fakultas_id));
   const { data: periods } = usePeriodsQuery();
 
@@ -123,7 +124,7 @@ const ScoreSummary = ({ portalType = 'admin' }) => {
           <ActionButton 
             icon="visibility" 
             label="Detail" 
-            onClick={() => navigate(portalType === 'fakultas' ? `/app/kencana/scores?group_id=${row.group_id}` : `/app/kencana/scores?group_id=${row.group_id}`)} 
+            onClick={() => navigate(portalType === 'fakultas' ? `/app/kencana/faculty/scores?group_id=${row.group_id}` : `/app/kencana/scores?group_id=${row.group_id}`)} 
           />
         </div>
       )

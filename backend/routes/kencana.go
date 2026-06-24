@@ -47,11 +47,11 @@ func SetupKencanaRoutes(app *fiber.App) {
 	// Faculty Compliance Monitoring
 	admin.Get("/monitoring/faculty-compliance", middleware.RequirePermission("kencana.timeline.view"), kencana.GetFacultyComplianceMonitoring)
 	// Periods
-	admin.Get("/periods", middleware.RequirePermission("kencana.timeline.view"), kencana.ListPeriods)
+	admin.Get("/periods", middleware.RequireAnyPermission("kencana.timeline.view", "kencana.faculty_stages.view", "kencana.dashboard.view", "kencana.mentors.view"), kencana.ListPeriods)
 	admin.Post("/periods", middleware.RequirePermission("kencana.timeline.create"), kencana.CreatePeriod)
 	admin.Put("/periods/:id", middleware.RequirePermission("kencana.timeline.update"), kencana.UpdatePeriod)
 
-	admin.Get("/periods/:id/phases", middleware.RequirePermission("kencana.timeline.view"), kencana.GetPeriodPhases)
+	admin.Get("/periods/:id/phases", middleware.RequireAnyPermission("kencana.timeline.view", "kencana.faculty_stages.view", "kencana.dashboard.view", "kencana.mentors.view"), kencana.GetPeriodPhases)
 	admin.Put("/periods/:id/timeline/:phaseType", middleware.RequirePermission("kencana.timeline.update"), kencana.UpdateTimelinePhase)
 	admin.Post("/periods/:id/university/:action", middleware.RequirePermission("kencana.timeline.update"), kencana.UpdateUniversityPhase)
 	admin.Post("/periods/:id/faculty/open", middleware.RequirePermission("kencana.timeline.update"), kencana.OpenFacultyPhases)

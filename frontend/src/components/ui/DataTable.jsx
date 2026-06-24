@@ -259,11 +259,12 @@ export default function DataTable({
         <table className="w-full">
           <thead style={{ backgroundColor: 'var(--theme-bg)' }}>
             <tr>
-              {columns.map((col) => {
+              {columns.map((col, colIdx) => {
                 const isSortable = col.sortable !== false && col.key;
+                const colKey = col.key || col.header || col.accessor?.toString() || colIdx;
                 return (
                   <th
-                    key={col.key}
+                    key={colKey}
                     onClick={() => isSortable && handleSort(col.key)}
                     className={cn(
                       "px-6 py-3.5 text-left text-[10px] font-bold uppercase tracking-wider select-none whitespace-nowrap",
@@ -304,14 +305,17 @@ export default function DataTable({
               // Loading skeleton
               Array.from({ length: 5 }).map((_, i) => (
                 <tr key={i} className="border-t" style={{ borderColor: 'var(--theme-border-muted)' }}>
-                  {columns.map((col) => (
-                    <td key={col.key} className={cn("px-6 py-4", col.className, col.cellClassName)}>
+                  {columns.map((col, colIdx) => {
+                    const colKey = col.key || col.header || col.accessor?.toString() || colIdx;
+                    return (
+                    <td key={colKey} className={cn("px-6 py-4", col.className, col.cellClassName)}>
                       <div
                         className="h-4 rounded animate-pulse"
                         style={{ backgroundColor: 'var(--theme-border-muted)', width: `${60 + Math.random() * 40}%` }}
                       />
                     </td>
-                  ))}
+                    );
+                  })}
                   {(onRowClick || (actions && typeof actions === 'function')) && <td className="px-6 py-4"><div className="h-2.5 w-16 rounded animate-pulse" style={{ backgroundColor: 'var(--theme-border-muted)' }} /></td>}
                 </tr>
               ))
@@ -334,20 +338,23 @@ export default function DataTable({
               // Data rows
               paginatedData.map((row, idx) => (
                 <tr
-                  key={row.id || idx}
+                  key={row.id ? `${row.id}-${idx}` : idx}
                   className="border-t cursor-pointer transition-colors hover:bg-[var(--theme-primary-light)]"
                   style={{ borderColor: 'var(--theme-border-muted)' }}
                   onClick={() => onRowClick && onRowClick(row)}
                 >
-                  {columns.map((col) => (
+                  {columns.map((col, colIdx) => {
+                    const colKey = col.key || col.header || col.accessor?.toString() || colIdx;
+                    return (
                     <td
-                      key={col.key}
+                      key={colKey}
                       className={cn("px-6 py-4 text-sm font-semibold", col.className, col.cellClassName)}
                       style={{ color: 'var(--theme-text)' }}
                     >
                       {col.render ? col.render(row[col.key], row, (activePage - 1) * limit + idx) : row[col.key]}
                     </td>
-                  ))}
+                    );
+                  })}
                   {(onRowClick || (actions && typeof actions === 'function')) && (
                     <td className="px-6 py-4">
                       <div className="flex items-center justify-end gap-1.5">

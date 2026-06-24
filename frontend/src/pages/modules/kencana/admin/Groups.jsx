@@ -38,7 +38,7 @@ const Groups = ({ portal: propPortal, facultyId: propFacultyId }) => {
   const portal = propPortal || (isFacultyScoped ? 'fakultas' : 'admin');
   const isSuperAdmin = role === 'super_admin' || role === 'kencana_admin';
   const userFacultyId = user?.fakultas_id || user?.FakultasID || '';
-  const basePath = window.location.pathname.startsWith('/kencana-fakultas') ? '/kencana-fakultas' : window.location.pathname.startsWith('/kencana-fakult') ? '/kencana-fakult' : '/app/kencana/dashboard';
+  const basePath = window.location.pathname.startsWith('/app/kencana/faculty') ? '/app/kencana/faculty' : window.location.pathname.startsWith('/app/kencana/faculty') ? '/app/kencana/faculty' : '/app/kencana';
 
   const [selectedPeriodId, setSelectedPeriodId] = useState('');
   const [search, setSearch] = useState('');
@@ -183,6 +183,8 @@ const Groups = ({ portal: propPortal, facultyId: propFacultyId }) => {
     const payload = { ...form, period_id: Number(selectedPeriodId), capacity: Number(form.capacity), mentor_id: form.mentor_id ? Number(form.mentor_id) : null, fakultas_id: form.fakultas_id ? Number(form.fakultas_id) : null };
     if (editingGroup) {
       payload.group_number = form.group_number ? Number(form.group_number) : editingGroup.group_number;
+    } else {
+      delete payload.group_number;
     }
     if (payload.scope_type === 'university') payload.fakultas_id = null;
     const mutation = editingGroup ? updateGroup : createGroup;
@@ -473,7 +475,7 @@ const Groups = ({ portal: propPortal, facultyId: propFacultyId }) => {
                 value={form.fakultas_id}
                 onValueChange={(val) => setForm({ ...form, fakultas_id: val })}
                 className="w-full"
-                disabled={!!form.mentor_id || isFacultyScoped}
+                disabled={!!form.mentor_id || (isFacultyScoped && !isSuperAdmin)}
               >
                 <SelectOption value="">Pilih Fakultas</SelectOption>
                 {faculties?.map(f => (

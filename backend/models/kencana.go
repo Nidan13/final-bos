@@ -252,8 +252,9 @@ func (KencanaAssignmentSubmission) TableName() string {
 
 type KencanaHandbook struct {
 	BaseModel
-	PeriodID    uint           `gorm:"uniqueIndex:idx_kencana_handbook_period_student" json:"period_id"`
-	StudentID   uint           `gorm:"uniqueIndex:idx_kencana_handbook_period_student;index" json:"student_id"`
+	PeriodID    uint           `gorm:"uniqueIndex:idx_kencana_handbook_unique" json:"period_id"`
+	StudentID   uint           `gorm:"uniqueIndex:idx_kencana_handbook_unique;index" json:"student_id"`
+	ScopeType   string         `gorm:"uniqueIndex:idx_kencana_handbook_unique;size:50;not null;default:'university'" json:"scope_type"`
 	ContentJSON datatypes.JSON `gorm:"type:jsonb" json:"content_json"`
 	Status      string         `gorm:"size:40;default:'not_started';index" json:"status"`
 	SubmittedAt *time.Time     `json:"submitted_at"`
