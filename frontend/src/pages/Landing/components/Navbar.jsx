@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Menu, X, ChevronDown } from 'lucide-react'
+import useAuthStore from '../../../store/useAuthStore'
 
 const navLinks = [
   { label: 'Beranda', path: '/' },
@@ -15,6 +16,7 @@ export default function Navbar({ settings }) {
   const [scrolled, setScrolled] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
   const location = useLocation()
+  const isAuthenticated = useAuthStore(state => state.isAuthenticated)
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20)
@@ -88,14 +90,14 @@ export default function Navbar({ settings }) {
             })}
             <div className="ml-4 flex items-center gap-3">
               <Link
-                to="/login"
+                to={isAuthenticated ? "/app/dashboard" : "/login"}
                 className={`px-5 py-2.5 rounded-xl text-sm font-bold transition-all ${
                   isSolid
                     ? 'text-[var(--landing-primary)] border-2 border-[var(--landing-primary)] hover:bg-[var(--landing-primary)] hover:text-white'
                     : 'text-white border-2 border-white/40 hover:border-white hover:bg-white/10'
                 }`}
               >
-                Masuk
+                {isAuthenticated ? "Dasbor" : "Masuk"}
               </Link>
               {isPmbOpen && (
                 <Link
@@ -152,10 +154,10 @@ export default function Navbar({ settings }) {
               })}
               <div className="pt-3 flex gap-3">
                 <Link
-                  to="/login"
+                  to={isAuthenticated ? "/app/dashboard" : "/login"}
                   className="flex-1 text-center px-5 py-2.5 rounded-xl text-sm font-bold border-2 border-[var(--landing-primary)] text-[var(--landing-primary)] hover:bg-[var(--landing-primary)] hover:text-white transition-all"
                 >
-                Masuk
+                {isAuthenticated ? "Dasbor" : "Masuk"}
                 </Link>
                 {isPmbOpen && (
                   <Link

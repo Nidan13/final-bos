@@ -80,7 +80,6 @@ const InsuranceReview = React.lazy(() => import('@/pages/modules/kesehatan/Insur
 const TenagaKesehatanReferral = React.lazy(() => import('@/pages/modules/kesehatan/ReferralManagement'));
 const BAPManagement = React.lazy(() => import('@/pages/modules/kesehatan/BAPManagement'));
 const ReportsPage = React.lazy(() => import('@/pages/modules/kesehatan/ReportsPage'));
-const TenagaKesehatanSettings = React.lazy(() => import('@/pages/modules/kesehatan/Settings'));
 const TenagaKesehatanNotifications = React.lazy(() => import('@/pages/modules/kesehatan/NotificationsCenter'));
 
 // Kencana
@@ -98,7 +97,6 @@ const KencanaAdminBanding = React.lazy(() => import('@/pages/modules/kencana/adm
 const KencanaAdminGroups = React.lazy(() => import('@/pages/modules/kencana/admin/Groups'));
 const KencanaAdminMentors = React.lazy(() => import('@/pages/modules/kencana/admin/Mentors'));
 const KencanaAdminNotifications = React.lazy(() => import('@/pages/modules/kencana/admin/Notifications'));
-const KencanaAdminSettings = React.lazy(() => import('@/pages/modules/kencana/admin/Settings'));
 const KencanaFacultyMonitoring = React.lazy(() => import('@/pages/modules/kencana/admin/FacultyMonitoring'));
 const KencanaCertificateSettings = React.lazy(() => import('@/pages/modules/kencana/admin/CertificateSettings'));
 const CertificateViewer = React.lazy(() => import('@/pages/modules/kencana/admin/CertificateViewer'));
@@ -110,7 +108,6 @@ const KencanaMentorDashboard = React.lazy(() => import('@/pages/modules/kencana/
 const KencanaMentorStudents = React.lazy(() => import('@/pages/modules/kencana/mentor/Students'));
 const KencanaMentorAvailable = React.lazy(() => import('@/pages/modules/kencana/mentor/AvailableStudents'));
 const KencanaMentorStudentDetail = React.lazy(() => import('@/pages/modules/kencana/mentor/StudentDetail'));
-const KencanaMentorSettings = React.lazy(() => import('@/pages/modules/kencana/mentor/Settings'));
 const KencanaMentorGroups = React.lazy(() => import('@/pages/modules/kencana/mentor/Groups'));
 const KencanaMentorGroupDetail = React.lazy(() => import('@/pages/modules/kencana/mentor/GroupDetail'));
 const KencanaMentorTaskPage = React.lazy(() => import('@/pages/modules/kencana/mentor/KencanaMentorTaskPage'));
@@ -274,7 +271,6 @@ export default function AppRoutes() {
       <Route path="kesehatan/referrals" element={<Guarded perm={P.KESEHATAN_REFERRAL_VIEW}><TenagaKesehatanReferral /></Guarded>} />
       <Route path="kesehatan/bap" element={<Guarded perm={P.KESEHATAN_BAP_VIEW}><BAPManagement /></Guarded>} />
       <Route path="kesehatan/reports" element={<Guarded perm={P.KESEHATAN_REPORT_VIEW}><ReportsPage /></Guarded>} />
-      <Route path="kesehatan/settings" element={<TenagaKesehatanSettings />} />
 
       {/* ─── Kencana / PKKMB ─── */}
       <Route path="kencana/dashboard" element={<Guarded perm={P.KENCANA_DASHBOARD_VIEW}><KencanaAdminDashboard /></Guarded>} />
@@ -300,7 +296,6 @@ export default function AppRoutes() {
       <Route path="kencana/mentors" element={<Guarded perm={P.KENCANA_MENTOR_VIEW}><KencanaAdminMentors /></Guarded>} />
       <Route path="kencana/faculty-monitoring" element={<Guarded perm={P.KENCANA_FACULTY_VIEW}><KencanaFacultyMonitoring /></Guarded>} />
       <Route path="kencana/notifications" element={<Guarded perm={P.KENCANA_DASHBOARD_VIEW}><KencanaAdminNotifications /></Guarded>} />
-      <Route path="kencana/settings" element={<Guarded perm={P.KENCANA_SETTINGS_VIEW}><KencanaAdminSettings portalType="admin" /></Guarded>} />
 
       {/* Admin Fakultas Specific Sub-routes */}
       <Route path="kencana/faculty/announcements" element={<Guarded perm={P.KENCANA_FACULTY_VIEW}><KencanaAdminAnnouncements portal="fakultas" /></Guarded>} />
@@ -311,7 +306,6 @@ export default function AppRoutes() {
       <Route path="kencana/faculty/groups" element={<Guarded perm={P.KENCANA_FACULTY_VIEW}><KencanaAdminGroups portal="fakultas" /></Guarded>} />
       <Route path="kencana/faculty/mentors" element={<Guarded perm={P.KENCANA_FACULTY_VIEW}><KencanaAdminMentors portal="fakultas" /></Guarded>} />
       <Route path="kencana/faculty/notifications" element={<Guarded perm={P.KENCANA_FACULTY_VIEW}><KencanaAdminNotifications portalType="fakultas" /></Guarded>} />
-      <Route path="kencana/faculty/settings" element={<Guarded perm={P.KENCANA_FACULTY_VIEW}><KencanaAdminSettings portalType="fakultas" /></Guarded>} />
 
 
       {/* Kencana Mentor */}
@@ -321,7 +315,6 @@ export default function AppRoutes() {
       <Route path="kencana/mentor/available" element={<Guarded perm={P.KENCANA_MENTOR_STUDENTS}><KencanaMentorAvailable /></Guarded>} />
       <Route path="kencana/mentor/groups" element={<Guarded perm={P.KENCANA_MENTOR_STUDENTS}><KencanaMentorGroups /></Guarded>} />
       <Route path="kencana/mentor/groups/:id" element={<Guarded perm={P.KENCANA_MENTOR_STUDENTS}><KencanaMentorGroupDetail /></Guarded>} />
-      <Route path="kencana/mentor/settings" element={<Guarded perm={P.KENCANA_MENTOR_SETTINGS}><KencanaMentorSettings /></Guarded>} />
       <Route path="kencana/mentor/handbook" element={<Guarded perm={P.KENCANA_MENTOR_STUDENTS}><KencanaMentorTaskPage /></Guarded>} />
       <Route path="kencana/mentor/handbook/:id" element={<Guarded perm={P.KENCANA_MENTOR_STUDENTS}><KencanaMentorHandbookReviewPage /></Guarded>} />
       <Route path="kencana/mentor/attendance" element={<Guarded perm={P.KENCANA_MENTOR_STUDENTS}><KencanaMentorTaskPage /></Guarded>} />

@@ -20,6 +20,7 @@ import Maintenance from './pages/Error/Maintenance'
 import { Loader2 } from 'lucide-react'
 import ProtectedRoute from './components/ProtectedRoute'
 import useAuthStore from './store/useAuthStore'
+import IdleTimerWrapper from './components/IdleTimerWrapper'
 
 // Module-based architecture
 import DynamicLayout from './layouts/DynamicLayout'
@@ -58,69 +59,71 @@ function App() {
       <ThemeProvider>
         <Router>
           <ScrollToTop />
-          <React.Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-slate-50"><Loader2 className="animate-spin text-primary size-10" /></div>}>
-            <Routes>
+          <IdleTimerWrapper>
+            <React.Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-slate-50"><Loader2 className="animate-spin text-primary size-10" /></div>}>
+              <Routes>
 
-              {/* Landing Pages */}
-              <Route path="/" element={<LandingLayout />}>
-                <Route index element={<Beranda />} />
-                <Route path="tentang" element={<Tentang />} />
-                <Route path="program-studi" element={<ProgramStudi />} />
-                <Route path="berita" element={<Berita />} />
-                <Route path="berita/:id" element={<BeritaDetail />} />
-                <Route path="kontak" element={<Kontak />} />
-                <Route path="kebijakan-privasi" element={<KebijakanPrivasi />} />
-                <Route path="syarat-ketentuan" element={<SyaratKetentuan />} />
-              </Route>
+                {/* Landing Pages */}
+                <Route path="/" element={<LandingLayout />}>
+                  <Route index element={<Beranda />} />
+                  <Route path="tentang" element={<Tentang />} />
+                  <Route path="program-studi" element={<ProgramStudi />} />
+                  <Route path="berita" element={<Berita />} />
+                  <Route path="berita/:id" element={<BeritaDetail />} />
+                  <Route path="kontak" element={<Kontak />} />
+                  <Route path="kebijakan-privasi" element={<KebijakanPrivasi />} />
+                  <Route path="syarat-ketentuan" element={<SyaratKetentuan />} />
+                </Route>
 
-              {/* Auth */}
-              <Route path="/login" element={<Login />} />
-              <Route path="/daftar-pkkmb" element={<PMBActivation />} />
-              <Route path="/aktivasi-pmb" element={<PMBActivation />} />
-              <Route path="/forgot-password" element={<ForgotPassword />} />
-              <Route path="/change-password" element={<ChangePassword />} />
+                {/* Auth */}
+                <Route path="/login" element={<Login />} />
+                <Route path="/daftar-pkkmb" element={<PMBActivation />} />
+                <Route path="/aktivasi-pmb" element={<PMBActivation />} />
+                <Route path="/forgot-password" element={<ForgotPassword />} />
+                <Route path="/change-password" element={<ChangePassword />} />
 
-              {/* Error Pages */}
-              <Route path="/404" element={<Error404 />} />
-              <Route path="/403" element={<Error403 />} />
-              <Route path="/500" element={<Error500 />} />
-              <Route path="/maintenance" element={<Maintenance />} />
+                {/* Error Pages */}
+                <Route path="/404" element={<Error404 />} />
+                <Route path="/403" element={<Error403 />} />
+                <Route path="/500" element={<Error500 />} />
+                <Route path="/maintenance" element={<Maintenance />} />
 
-              {/* ============================================ */}
-              {/* MODULE-BASED ROUTES — Single entry point     */}
-              {/* Permission-driven layout & sidebar           */}
-              {/* ============================================ */}
-              <Route path="/app/*" element={<ProtectedRoute requiredPermissions={[]}><DynamicLayout /></ProtectedRoute>}>
-                {AppRoutes()}
-              </Route>
+                {/* ============================================ */}
+                {/* MODULE-BASED ROUTES — Single entry point     */}
+                {/* Permission-driven layout & sidebar           */}
+                {/* ============================================ */}
+                <Route path="/app/*" element={<ProtectedRoute requiredPermissions={[]}><DynamicLayout /></ProtectedRoute>}>
+                  {AppRoutes()}
+                </Route>
 
-              {/* Legacy redirects → new paths */}
-              <Route path="/admin" element={<Navigate to="/app/dashboard" replace />} />
-              <Route path="/admin/*" element={<Navigate to="/app/dashboard" replace />} />
-              <Route path="/faculty" element={<Navigate to="/app/dashboard" replace />} />
-              <Route path="/faculty/*" element={<Navigate to="/app/dashboard" replace />} />
-              <Route path="/ormawa" element={<Navigate to="/app/ormawa/dashboard" replace />} />
-              <Route path="/ormawa/*" element={<Navigate to="/app/ormawa/dashboard" replace />} />
-              <Route path="/psychologist" element={<Navigate to="/app/psikologi/dashboard" replace />} />
-              <Route path="/psychologist/*" element={<Navigate to="/app/psikologi/dashboard" replace />} />
-              <Route path="/tenagakes" element={<Navigate to="/app/kesehatan/dashboard" replace />} />
-              <Route path="/tenagakes/*" element={<Navigate to="/app/kesehatan/dashboard" replace />} />
-              <Route path="/kencana-admin" element={<Navigate to="/app/kencana/dashboard" replace />} />
-              <Route path="/kencana-admin/*" element={<Navigate to="/app/kencana/dashboard" replace />} />
-              <Route path="/kencana-fakult" element={<Navigate to="/app/kencana/dashboard" replace />} />
-              <Route path="/kencana-fakult/*" element={<Navigate to="/app/kencana/dashboard" replace />} />
-              <Route path="/kencana-fakultas" element={<Navigate to="/app/kencana/dashboard" replace />} />
-              <Route path="/kencana-fakultas/*" element={<Navigate to="/app/kencana/dashboard" replace />} />
-              <Route path="/kencana-mentor" element={<Navigate to="/app/kencana/mentor" replace />} />
-              <Route path="/kencana-mentor/*" element={<Navigate to="/app/kencana/mentor" replace />} />
-              <Route path="/student" element={<Navigate to="/app/student/dashboard" replace />} />
-              <Route path="/student/*" element={<Navigate to="/app/student/dashboard" replace />} />
-              <Route path="/dashboard" element={<Navigate to="/app/dashboard" replace />} />
+                {/* Legacy redirects → new paths */}
+                <Route path="/admin" element={<Navigate to="/app/dashboard" replace />} />
+                <Route path="/admin/*" element={<Navigate to="/app/dashboard" replace />} />
+                <Route path="/faculty" element={<Navigate to="/app/dashboard" replace />} />
+                <Route path="/faculty/*" element={<Navigate to="/app/dashboard" replace />} />
+                <Route path="/ormawa" element={<Navigate to="/app/ormawa/dashboard" replace />} />
+                <Route path="/ormawa/*" element={<Navigate to="/app/ormawa/dashboard" replace />} />
+                <Route path="/psychologist" element={<Navigate to="/app/psikologi/dashboard" replace />} />
+                <Route path="/psychologist/*" element={<Navigate to="/app/psikologi/dashboard" replace />} />
+                <Route path="/tenagakes" element={<Navigate to="/app/kesehatan/dashboard" replace />} />
+                <Route path="/tenagakes/*" element={<Navigate to="/app/kesehatan/dashboard" replace />} />
+                <Route path="/kencana-admin" element={<Navigate to="/app/kencana/dashboard" replace />} />
+                <Route path="/kencana-admin/*" element={<Navigate to="/app/kencana/dashboard" replace />} />
+                <Route path="/kencana-fakult" element={<Navigate to="/app/kencana/dashboard" replace />} />
+                <Route path="/kencana-fakult/*" element={<Navigate to="/app/kencana/dashboard" replace />} />
+                <Route path="/kencana-fakultas" element={<Navigate to="/app/kencana/dashboard" replace />} />
+                <Route path="/kencana-fakultas/*" element={<Navigate to="/app/kencana/dashboard" replace />} />
+                <Route path="/kencana-mentor" element={<Navigate to="/app/kencana/mentor" replace />} />
+                <Route path="/kencana-mentor/*" element={<Navigate to="/app/kencana/mentor" replace />} />
+                <Route path="/student" element={<Navigate to="/app/student/dashboard" replace />} />
+                <Route path="/student/*" element={<Navigate to="/app/student/dashboard" replace />} />
+                <Route path="/dashboard" element={<Navigate to="/app/dashboard" replace />} />
 
-              {/* 404 fallback */}
-              <Route path="*" element={<Error404 />} />
-            </Routes>
-          </React.Suspense>
+                {/* 404 fallback */}
+                <Route path="*" element={<Error404 />} />
+              </Routes>
+            </React.Suspense>
+          </IdleTimerWrapper>
         </Router>
       </ThemeProvider>
     </ErrorBoundary>

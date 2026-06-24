@@ -117,7 +117,7 @@ const AcademicPortal = () => {
     const handleSyncPeriode = async () => {
         setSyncingPeriode(true)
         try {
-            const res = await api.post('/app/dashboard/integrasi/sync-periode')
+            const res = await api.post('/admin/integrasi/sync-periode')
             if (res.data.status === 'success') {
                 toast.success(res.data.message || 'Periode Akademik berhasil disinkronisasi dengan SEVIMA!')
                 fetchSettings() // Reload data
@@ -134,7 +134,7 @@ const AcademicPortal = () => {
     const handleSyncPMB = async () => {
         setSyncingPMB(true)
         try {
-            const res = await api.post('/app/dashboard/integrasi/sync-pmb')
+            const res = await api.post('/admin/integrasi/kencana-sync-pmb')
             if (res.data.status === 'success') {
                 toast.success(res.data.message || 'Sinkronisasi PMB sedang berjalan di background!')
             } else {
@@ -162,7 +162,7 @@ const AcademicPortal = () => {
 
     const fetchSettings = async () => {
         try {
-            const res = await api.get('/super-admin/academic-settings')
+            const res = await api.get('/admin/academic-settings')
             if (res.data.status === 'success') {
                 setAcademicSettings(prev => ({
                     ...prev,
@@ -174,7 +174,7 @@ const AcademicPortal = () => {
                 }))
             }
 
-            const resInteg = await api.get('/app/dashboard/api-integrations')
+            const resInteg = await api.get('/admin/api-integrations')
             if (resInteg.data.status === 'success') {
                 setApiIntegrations(prev => ({
                     ...prev,
@@ -188,7 +188,7 @@ const AcademicPortal = () => {
                 setIsMaintenance(resMaint.data.maintenance_mode)
             }
 
-            const resSmtp = await api.get('/app/dashboard/smtp-settings')
+            const resSmtp = await api.get('/admin/smtp-settings')
             if (resSmtp.data.status === 'success' && resSmtp.data.data) {
                 const s = resSmtp.data.data;
                 setSmtpConfig({
@@ -220,7 +220,7 @@ const AcademicPortal = () => {
     const handleUpdate = async () => {
         setSubmitting(true)
         try {
-            await api.put('/super-admin/academic-settings', {
+            await api.put('/admin/academic-settings', {
                 TahunAkademik: academicSettings.TahunAkademik,
                 Semester: academicSettings.Semester,
                 IsKRSOpen: academicSettings.IsKRSOpen,
@@ -228,9 +228,9 @@ const AcademicPortal = () => {
                 IsMBKMOpen: academicSettings.IsMBKMOpen
             })
 
-            await api.put('/app/dashboard/api-integrations', apiIntegrations)
+            await api.put('/admin/api-integrations', apiIntegrations)
 
-            await api.put('/app/dashboard/smtp-settings', {
+            await api.put('/admin/smtp-settings', {
                 provider: smtpConfig.provider,
                 mail_driver: smtpConfig.mailDriver,
                 host: smtpConfig.host,
@@ -270,7 +270,7 @@ const AcademicPortal = () => {
 
         setSmtpTesting(true);
         try {
-            const res = await api.post('/app/dashboard/smtp-settings/test', { to: smtpConfig.testEmailTo });
+            const res = await api.post('/admin/smtp-settings/test', { to: smtpConfig.testEmailTo });
             if (res.data.status === 'success') {
                 toast.success(res.data.message || 'Email uji berhasil dikirim!');
             } else {
@@ -287,7 +287,7 @@ const AcademicPortal = () => {
         try {
             setIsUpdatingMaintenance(true);
             const newState = !isMaintenance;
-            const response = await api.put('/app/dashboard/maintenance', {
+            const response = await api.put('/admin/maintenance', {
                 enabled: newState,
                 message: newState ? 'Sistem sedang dalam perbaikan rutin. Silakan kembali beberapa saat lagi.' : ''
             });
@@ -449,7 +449,7 @@ const AcademicPortal = () => {
 
         try {
             setIsResetting(true);
-            const response = await api.post('/app/dashboard/reset-database', { confirmation: 'RESET' });
+            const response = await api.post('/admin/reset-database', { confirmation: 'RESET' });
             if (response.data?.status === 'success' || response.status === 200) {
                 toast.success('Database berhasil di-reset!');
                 setIsResetModalOpen(false);

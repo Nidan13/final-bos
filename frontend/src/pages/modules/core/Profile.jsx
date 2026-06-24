@@ -37,7 +37,7 @@ const Bell = ({ size, className, ...props }) => <span className={`material-symbo
 
 
 const AdminProfile = () => {
-    const { user: authUser } = useAuthStore()
+    const { user } = useAuthStore()
     const [loading, setLoading] = useState(true)
     const [submitting, setSubmitting] = useState(false)
     const [profile, setProfile] = useState({ Email: '' })
@@ -51,21 +51,46 @@ const AdminProfile = () => {
     const [activeTab, setActiveTab] = useState('general')
 
     const TABS = [
-        { id: 'general', label: 'Identity & Info', icon: User },
-        { id: 'security', label: 'Security Configuration', icon: Lock },
-        { id: 'activity', label: 'Audit & Node Status', icon: Activity }
+        { id: 'general', label: 'Informasi Profil', icon: User },
+        { id: 'security', label: 'Pengaturan Keamanan', icon: Lock },
     ]
+
+    const getProfileEndpoint = () => {
+        if (!user) return '/admin/profile';
+        const r = user.role?.toLowerCase() || '';
+        if (r.includes('faculty') || r.includes('fakultas')) return '/faculty/profile';
+        if (r === 'kencana_mentor') return '/kencana-mentor/profile';
+        if (r === 'psikolog') return '/psychologist/profile';
+        if (r === 'tenaga_kesehatan') return '/tenaga-kesehatan/profile';
+        if (r === 'ormawa') return '/ormawa/profile';
+        return '/admin/profile';
+    }
+
+    const getPasswordEndpoint = () => {
+        if (!user) return '/admin/profile';
+        const r = user.role?.toLowerCase() || '';
+        if (r.includes('faculty') || r.includes('fakultas')) return '/faculty/change-password';
+        if (r === 'psikolog') return '/psychologist/change-password';
+        if (r === 'tenaga_kesehatan') return '/tenaga-kesehatan/change-password';
+        if (r === 'kencana_mentor') return '/kencana-mentor/profile'; // Mentor uses PUT /profile for password
+        return '/admin/profile'; // Default admin uses PUT /profile for both
+    }
 
     useEffect(() => {
         const fetchProfile = async () => {
             try {
-                const endpoint = window.location.pathname.startsWith('/app/dashboard') ? '/app/dashboard/profile' : '/app/dashboard/profile'
-                const res = await api.get(endpoint)
+                const res = await api.get('/auth/me')
                 if (res.data.status === 'success') {
-                    setProfile(res.data.data)
+                    const userData = res.data.data.user || {};
+                    setProfile({
+                        Email: userData.email,
+                        NamaLengkap: userData.nama,
+                        ...userData
+                    })
                 }
             } catch (err) {
-                toast.error('Gagal memuat profil administratif')
+                console.error("Profile Fetch Error:", err);
+                toast.error(err.response?.data?.message || err.message || 'Gagal memuat profil administratif')
             } finally {
                 setLoading(false)
             }
@@ -77,7 +102,7 @@ const AdminProfile = () => {
         if (e) e.preventDefault()
         setSubmitting(true)
         try {
-            const endpoint = window.location.pathname.startsWith('/app/dashboard') ? '/app/dashboard/profile' : '/app/dashboard/profile'
+            const endpoint = getProfileEndpoint()
             const res = await api.put(endpoint, { Email: profile.Email })
             if (res.data.status === 'success') {
                 toast.success('Profil administratif berhasil diperbarui')
@@ -97,7 +122,7 @@ const AdminProfile = () => {
         }
         setSubmitting(true)
         try {
-            const endpoint = window.location.pathname.startsWith('/app/dashboard') ? '/app/dashboard/profile' : '/app/dashboard/profile'
+            const endpoint = getPasswordEndpoint()
             const res = await api.put(endpoint, {
                 OldPassword: passwords.OldPassword,
                 NewPassword: passwords.NewPassword
@@ -131,10 +156,10 @@ const AdminProfile = () => {
             <div className="max-w-[1200px] mx-auto space-y-8">
                 
                 {/* ── Breadcrumbs ─────────────────────────── */}
-                <nav className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.2em] text-neutral-400 font-jakarta">
-                    <span className="hover:text-primary transition-colors cursor-pointer">Super Admin Hub</span>
-                    <ChevronRight size={10} className="text-neutral-300" />
-                    <span className="text-neutral-900">Administrator Settings</span>
+                <nav className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 font-jakarta">
+                    <span className="hover:text-bku-primary transition-colors cursor-pointer">Pengaturan Akun</span>
+                    <ChevronRight size={10} className="text-slate-300" />
+                    <span className="text-slate-900">Profil Saya</span>
                 </nav>
 
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-start">
@@ -153,10 +178,14 @@ const AdminProfile = () => {
                                     </Button>
                                 </div>
                                 <div className="space-y-1 mt-2">
-                                    <h3 className="text-[15px] font-black font-headline uppercase tracking-tight text-slate-800">{profile.Email?.split('@')[0] || (window.location.pathname.startsWith('/app/dashboard') ? 'Faculty Administrator' : 'Super Administrator')}</h3>
-                                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{profile.Email}</p>
+                                    <h3 className="text-[15px] font-black font-headline uppercase tracking-tight text-slate-800">
+                                        {profile.NamaLengkap || profile.Email?.split('@')[0] || user?.nama || 'Pengguna'}
+                                    </h3>
+                                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{profile.Email || user?.email}</p>
                                 </div>
-                                <Badge className="px-3 py-1 mt-2 bg-bku-primary/10 text-bku-primary border-none text-[9px] font-black uppercase tracking-widest rounded-lg shadow-none">{window.location.pathname.startsWith('/app/dashboard') ? 'Faculty Level Access' : 'Root Authority'}</Badge>
+                                <Badge className="px-3 py-1 mt-2 bg-bku-primary/10 text-bku-primary border-none text-[9px] font-black uppercase tracking-widest rounded-lg shadow-none">
+                                    {user?.role?.replace(/_/g, ' ') || 'Hak Akses'}
+                                </Badge>
                             </div>
                         </Card>
 
@@ -186,67 +215,67 @@ const AdminProfile = () => {
                     <div className="lg:col-span-9">
                         {activeTab === 'general' && (
                             <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
-                                <Card className="glass-card border border-slate-200/60 shadow-sm rounded-2xl overflow-hidden">
-                                    <form onSubmit={handleUpdateProfile} className="p-8 md:p-10 space-y-8">
+                                <Card className="border border-slate-200 shadow-sm rounded-2xl overflow-hidden bg-white">
+                                    <form onSubmit={handleUpdateProfile} className="p-8 space-y-8">
                                         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 pb-6">
                                             <div className="flex items-center gap-4">
                                                 <div className="size-10 rounded-xl bg-bku-primary/10 flex items-center justify-center text-bku-primary shrink-0">
                                                     <User size={20} />
                                                 </div>
                                                 <div>
-                                                    <h3 className="text-sm font-black font-headline uppercase tracking-tight text-slate-800">Identity Configuration</h3>
-                                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Informasi Dasar Akun Administratif</p>
+                                                    <h3 className="text-base font-black font-headline uppercase tracking-tight text-slate-800">Informasi Dasar</h3>
+                                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Data Utama Akun Pengguna</p>
                                                 </div>
                                             </div>
-                                            <div className="flex items-center gap-2 px-3 py-1.5 bg-emerald-50 text-emerald-600 rounded-lg border border-emerald-100 self-start md:self-auto">
+                                            <div className="flex items-center gap-2 px-3 py-1.5 bg-emerald-50 text-emerald-600 rounded-lg border border-emerald-100 self-start md:self-auto shadow-sm">
                                                 <div className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                                                <span className="text-[9px] font-bold uppercase tracking-widest">Active Status</span>
+                                                <span className="text-[9px] font-black uppercase tracking-widest">Status Aktif</span>
                                             </div>
                                         </div>
 
                                         <div className="space-y-6">
                                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                                <div className="space-y-3 md:col-span-2">
-                                                    <Label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1 font-headline">Administrative Access Email</Label>
+                                                <div className="space-y-2 md:col-span-2 group/field">
+                                                    <Label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1 font-headline group-focus-within/field:text-bku-primary transition-colors">Email Akses Sistem</Label>
                                                     <div className="relative group/input">
-                                                        <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 size-4 text-slate-400 group-focus-within/input:text-bku-primary transition-colors" >mail</span>
+                                                        <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 size-4 text-slate-400 group-focus-within/input:text-bku-primary transition-colors" style={{ fontSize: '18px' }} >mail</span>
                                                         <Input 
                                                             type="email" 
                                                             value={profile.Email}
                                                             onChange={(e) => setProfile({...profile, Email: e.target.value})}
-                                                            className="h-12 pl-12 rounded-xl border-slate-200 bg-slate-50/50 focus:bg-white font-bold text-sm font-headline focus:ring-bku-primary/20 transition-all shadow-inner"
+                                                            className="h-12 pl-12 rounded-xl border-slate-200 bg-slate-50/80 focus:bg-white font-semibold text-sm focus:ring-2 focus:ring-bku-primary/20 focus:border-bku-primary/50 transition-all"
                                                             required
                                                         />
                                                     </div>
-                                                    <p className="text-[10px] text-slate-400 font-medium ml-1">Email ini digunakan untuk autentikasi sistem dan menerima notifikasi audit penting.</p>
+                                                    <p className="text-[11px] text-slate-500 font-medium ml-1">Email ini digunakan untuk masuk ke sistem dan menerima notifikasi penting.</p>
                                                 </div>
                                                 
-                                                <div className="space-y-3 opacity-60">
-                                                    <Label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1 font-headline">Registration Date</Label>
-                                                    <div className="h-12 px-4 rounded-xl border border-slate-200 bg-slate-50 flex items-center gap-3">
-                                                        <span className="material-symbols-outlined text-slate-400" style={{ fontSize: '16px' }} >schedule</span>
-                                                        <span className="text-xs font-bold text-slate-600 font-inter">{new Date(profile.CreatedAt || Date.now()).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
+                                                <div className="space-y-2">
+                                                    <Label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1 font-headline">Tanggal Terdaftar</Label>
+                                                    <div className="h-12 px-4 rounded-xl border border-slate-100 bg-slate-50/50 flex items-center gap-3">
+                                                        <span className="material-symbols-outlined text-slate-400" style={{ fontSize: '18px' }} >schedule</span>
+                                                        <span className="text-sm font-semibold text-slate-600 font-inter">{new Date(profile.CreatedAt || Date.now()).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
                                                     </div>
                                                 </div>
 
-                                                <div className="space-y-3 opacity-60">
-                                                    <Label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1 font-headline">Authority Level</Label>
-                                                    <div className="h-12 px-4 rounded-xl border border-slate-200 bg-slate-50 flex items-center gap-3">
-                                                        <span className="material-symbols-outlined text-slate-400" style={{ fontSize: '16px' }} >admin_panel_settings</span>
-                                                        <span className="text-xs font-bold text-slate-600 font-inter">{window.location.pathname.startsWith('/app/dashboard') ? 'Faculty / Prodi Admin' : 'Level 0 (Root Admin)'}</span>
+                                                <div className="space-y-2">
+                                                    <Label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1 font-headline">Tingkat Akses</Label>
+                                                    <div className="h-12 px-4 rounded-xl border border-slate-100 bg-slate-50/50 flex items-center gap-3">
+                                                        <span className="material-symbols-outlined text-slate-400" style={{ fontSize: '18px' }} >admin_panel_settings</span>
+                                                        <span className="text-sm font-semibold text-slate-600 font-inter capitalize">{user?.role?.replace(/_/g, ' ') || 'Pengguna'}</span>
                                                     </div>
                                                 </div>
                                             </div>
                                         </div>
 
-                                        <div className="pt-4 flex justify-end">
+                                        <div className="pt-6 flex justify-end border-t border-slate-100">
                                             <Button 
                                                 type="submit"
                                                 disabled={submitting}
                                                 className="h-12 px-8 bg-slate-800 text-white rounded-xl font-black font-headline text-[10px] uppercase tracking-widest hover:bg-slate-900 shadow-lg shadow-slate-900/20 transition-all active:scale-95 border-none"
                                             >
-                                                {submitting ? <span className="material-symbols-outlined animate-spin mr-2" style={{ fontSize: '16px' }} >sync</span> : <span className="material-symbols-outlined mr-2" style={{ fontSize: '16px' }} >save</span>}
-                                                Save Changes
+                                                {submitting ? <span className="material-symbols-outlined animate-spin mr-2" style={{ fontSize: '18px' }} >sync</span> : <span className="material-symbols-outlined mr-2" style={{ fontSize: '18px' }} >save</span>}
+                                                Simpan Perubahan
                                             </Button>
                                         </div>
                                     </form>
@@ -256,61 +285,61 @@ const AdminProfile = () => {
 
                         {activeTab === 'security' && (
                             <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
-                                <Card className="glass-card border border-rose-100 shadow-sm rounded-2xl overflow-hidden relative">
-                                    <div className="absolute top-0 right-0 p-8 opacity-[0.03] text-rose-600 pointer-events-none">
+                                <Card className="border border-rose-100 shadow-sm rounded-2xl overflow-hidden relative bg-white">
+                                    <div className="absolute top-0 right-0 p-8 opacity-[0.02] text-rose-600 pointer-events-none">
                                         <span className="material-symbols-outlined" style={{ fontSize: '180px' }}>security</span>
                                     </div>
-                                    <form onSubmit={handleChangePassword} className="p-8 md:p-10 space-y-8 relative z-10">
+                                    <form onSubmit={handleChangePassword} className="p-8 space-y-8 relative z-10">
                                         <div className="flex items-center gap-4 border-b border-rose-50 pb-6">
-                                            <div className="size-10 rounded-xl bg-rose-50 flex items-center justify-center text-rose-600 border border-rose-100 shrink-0">
+                                            <div className="size-10 rounded-xl bg-rose-50 flex items-center justify-center text-rose-500 border border-rose-100 shrink-0">
                                                 <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>key</span>
                                             </div>
                                             <div>
-                                                <h3 className="text-sm font-black font-headline uppercase tracking-tight text-slate-800">Security Override</h3>
-                                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Pembaruan Kredensial Akses Master</p>
+                                                <h3 className="text-base font-black font-headline uppercase tracking-tight text-slate-800">Ubah Kata Sandi</h3>
+                                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Pembaruan Kredensial Akses Sistem</p>
                                             </div>
                                         </div>
 
                                         <div className="space-y-6 max-w-xl">
-                                            <div className="space-y-3">
-                                                <Label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1 font-headline">Current Master Password</Label>
+                                            <div className="space-y-2 group/field">
+                                                <Label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1 font-headline group-focus-within/field:text-rose-500 transition-colors">Kata Sandi Saat Ini</Label>
                                                 <div className="relative group/input">
                                                     <Lock className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-slate-400 group-focus-within/input:text-rose-500 transition-colors" />
                                                     <Input 
                                                         type="password" 
                                                         value={passwords.OldPassword}
                                                         onChange={(e) => setPasswords({...passwords, OldPassword: e.target.value})}
-                                                        placeholder="Enter current password..."
-                                                        className="h-12 pl-12 rounded-xl border-slate-200 bg-white/60 focus:bg-white font-bold text-sm font-headline focus:ring-rose-500/20"
+                                                        placeholder="Masukkan kata sandi saat ini..."
+                                                        className="h-12 pl-12 rounded-xl border-slate-200 bg-white focus:ring-2 focus:ring-rose-500/20 focus:border-rose-400 transition-all"
                                                         required
                                                     />
                                                 </div>
                                             </div>
-                                            <div className="p-4 rounded-xl bg-rose-50/50 border border-rose-100 space-y-6">
-                                                <div className="space-y-3">
-                                                    <Label className="text-[10px] font-black text-rose-600 uppercase tracking-widest ml-1 font-headline">New Master Password</Label>
+                                            <div className="p-5 rounded-2xl bg-rose-50/40 border border-rose-100 space-y-5">
+                                                <div className="space-y-2 group/field">
+                                                    <Label className="text-[10px] font-black text-rose-600 uppercase tracking-widest ml-1 font-headline group-focus-within/field:text-rose-500 transition-colors">Kata Sandi Baru</Label>
                                                     <div className="relative group/input">
                                                         <KeyRound className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-rose-300 group-focus-within/input:text-rose-500 transition-colors" />
                                                         <Input 
                                                             type="password" 
                                                             value={passwords.NewPassword}
                                                             onChange={(e) => setPasswords({...passwords, NewPassword: e.target.value})}
-                                                            placeholder="Create new strong password..."
-                                                            className="h-12 pl-12 rounded-xl border-rose-200 bg-white focus:bg-white font-bold text-sm font-headline focus:ring-rose-500/30"
+                                                            placeholder="Buat kata sandi baru..."
+                                                            className="h-12 pl-12 rounded-xl border-rose-200 bg-white focus:ring-2 focus:ring-rose-500/20 focus:border-rose-400 transition-all"
                                                             required
                                                         />
                                                     </div>
                                                 </div>
-                                                <div className="space-y-3">
-                                                    <Label className="text-[10px] font-black text-rose-600 uppercase tracking-widest ml-1 font-headline">Confirm New Password</Label>
+                                                <div className="space-y-2 group/field">
+                                                    <Label className="text-[10px] font-black text-rose-600 uppercase tracking-widest ml-1 font-headline group-focus-within/field:text-rose-500 transition-colors">Konfirmasi Kata Sandi Baru</Label>
                                                     <div className="relative group/input">
                                                         <KeyRound className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-rose-300 group-focus-within/input:text-rose-500 transition-colors" />
                                                         <Input 
                                                             type="password" 
                                                             value={passwords.ConfirmPassword}
                                                             onChange={(e) => setPasswords({...passwords, ConfirmPassword: e.target.value})}
-                                                            placeholder="Repeat new password..."
-                                                            className="h-12 pl-12 rounded-xl border-rose-200 bg-white focus:bg-white font-bold text-sm font-headline focus:ring-rose-500/30"
+                                                            placeholder="Ulangi kata sandi baru..."
+                                                            className="h-12 pl-12 rounded-xl border-rose-200 bg-white focus:ring-2 focus:ring-rose-500/20 focus:border-rose-400 transition-all"
                                                             required
                                                         />
                                                     </div>
@@ -318,87 +347,17 @@ const AdminProfile = () => {
                                             </div>
                                         </div>
 
-                                        <div className="pt-4 border-t border-rose-50">
+                                        <div className="pt-6 border-t border-rose-50 flex justify-start">
                                             <Button 
                                                 type="submit"
                                                 disabled={submitting}
-                                                className="h-12 px-8 bg-rose-600 text-white rounded-xl font-black font-headline text-[10px] uppercase tracking-widest hover:bg-rose-700 shadow-lg shadow-rose-600/20 transition-all active:scale-95 border-none"
+                                                className="h-12 px-8 bg-gradient-to-r from-rose-500 to-rose-600 text-white rounded-xl font-black font-headline text-[10px] uppercase tracking-widest hover:from-rose-600 hover:to-rose-700 shadow-lg shadow-rose-600/30 transition-all active:scale-95 border-none"
                                             >
-                                                {submitting ? <span className="material-symbols-outlined animate-spin mr-2" style={{ fontSize: '16px' }} >sync</span> : <span className="material-symbols-outlined mr-2" style={{ fontSize: '16px' }} >security</span>}
-                                                Update Security Key
+                                                {submitting ? <span className="material-symbols-outlined animate-spin mr-2" style={{ fontSize: '18px' }} >sync</span> : <span className="material-symbols-outlined mr-2" style={{ fontSize: '18px' }} >security</span>}
+                                                Perbarui Kata Sandi
                                             </Button>
                                         </div>
                                     </form>
-                                </Card>
-                            </div>
-                        )}
-
-                        {activeTab === 'activity' && (
-                            <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
-                                <Card className="glass-card border border-slate-200/60 shadow-sm rounded-2xl overflow-hidden">
-                                    <div className="p-8 border-b border-slate-100 flex items-center justify-between">
-                                        <div className="flex items-center gap-4">
-                                            <div className="size-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-600 shrink-0">
-                                                <Activity size={20} />
-                                            </div>
-                                            <div>
-                                                <h3 className="text-sm font-black font-headline uppercase tracking-tight text-slate-800">System Activity & Audit</h3>
-                                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Log aktivitas administratif dan status node</p>
-                                            </div>
-                                        </div>
-                                        <Button variant="outline" className="h-9 px-4 rounded-lg text-[10px] font-bold uppercase tracking-widest border-slate-200">
-                                            Download Report
-                                        </Button>
-                                    </div>
-                                    
-                                    <div className="p-8">
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
-                                            <div className="p-5 rounded-2xl border border-slate-200 bg-white shadow-sm flex items-start gap-4 relative overflow-hidden group">
-                                                <div className="absolute right-0 top-0 w-24 h-full bg-gradient-to-l from-emerald-50 to-transparent pointer-events-none" />
-                                                <div className="size-12 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-500 shrink-0 group-hover:scale-110 transition-transform">
-                                                    <span className="material-symbols-outlined">shield</span>
-                                                </div>
-                                                <div>
-                                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Master Encryption</p>
-                                                    <p className="text-lg font-black text-slate-800 font-headline leading-tight">256-bit AES</p>
-                                                    <p className="text-[10px] font-medium text-emerald-600 mt-2 flex items-center gap-1"><span className="material-symbols-outlined text-[12px]">check_circle</span> System Secured</p>
-                                                </div>
-                                            </div>
-                                            <div className="p-5 rounded-2xl border border-slate-200 bg-white shadow-sm flex items-start gap-4 relative overflow-hidden group">
-                                                <div className="absolute right-0 top-0 w-24 h-full bg-gradient-to-l from-blue-50 to-transparent pointer-events-none" />
-                                                <div className="size-12 rounded-xl bg-blue-50 flex items-center justify-center text-blue-500 shrink-0 group-hover:scale-110 transition-transform">
-                                                    <span className="material-symbols-outlined">history</span>
-                                                </div>
-                                                <div>
-                                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Last Login</p>
-                                                    <p className="text-lg font-black text-slate-800 font-headline leading-tight">15:44 UTC</p>
-                                                    <p className="text-[10px] font-medium text-slate-500 mt-2 flex items-center gap-1">IP: 192.168.1.104</p>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <h4 className="text-[10px] font-black font-headline uppercase tracking-[0.2em] text-slate-400 mb-6 border-b border-slate-100 pb-3">Recent Logs</h4>
-                                        <div className="space-y-6 relative before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-slate-200 before:to-transparent">
-                                            {[
-                                                { label: "Updated Global RBAC", icon: Activity, color: "text-blue-500", bg: "bg-blue-50", border: "border-blue-100" },
-                                                { label: "Security Status Verified", icon: Bell, color: "text-emerald-500", bg: "bg-emerald-50", border: "border-emerald-100" },
-                                                { label: "Admin Profile Updated", icon: User, color: "text-purple-500", bg: "bg-purple-50", border: "border-purple-100" }
-                                            ].map((stat, i) => (
-                                                <div key={i} className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
-                                                    <div className="flex items-center justify-center w-10 h-10 rounded-full border-4 border-white bg-slate-100 text-slate-500 shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 shadow-sm z-10 transition-transform group-hover:scale-110">
-                                                        <stat.icon size={16} className={stat.color} />
-                                                    </div>
-                                                    <div className="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] p-4 rounded-xl border border-slate-100 bg-slate-50/50 group-hover:bg-white group-hover:shadow-md transition-all">
-                                                        <div className="flex items-center justify-between mb-1">
-                                                            <span className={cn("text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 rounded border", stat.color, stat.bg, stat.border)}>System Event</span>
-                                                            <span className="text-[9px] font-bold text-slate-400 tabular-nums">Today, 10:24 AM</span>
-                                                        </div>
-                                                        <p className="text-[12px] font-bold font-headline text-slate-700 mt-2">{stat.label}</p>
-                                                    </div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
                                 </Card>
                             </div>
                         )}

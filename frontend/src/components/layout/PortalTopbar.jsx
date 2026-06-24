@@ -432,12 +432,20 @@ export default function PortalTopbar({ config, onMenuClick }) {
   // Detect current portal and resolve valid routes
   const portalRoutes = useMemo(() => {
     const p = location.pathname;
-    if (p.startsWith('/admin')) return { profile: '/admin/profile', pengaturan: '/admin/theme' };
-    if (p.startsWith('/ormawa')) return { profile: null, pengaturan: '/ormawa/pengaturan' };
-    if (p.startsWith('/faculty')) return { profile: '/faculty/profile', pengaturan: '/faculty/pengaturan' };
-    if (p.startsWith('/psychologist')) return { profile: '/psychologist/settings', pengaturan: null };
-    if (p.startsWith('/student')) return { profile: '/student/profile', pengaturan: null };
-    return { profile: null, pengaturan: null };
+    
+    // Default fallback:
+    let profile = '/app/profile';
+    let pengaturan = null;
+
+    if (p.includes('/student')) {
+      profile = '/app/student/profile';
+    } else if (p.includes('/ormawa')) {
+      pengaturan = '/app/ormawa/pengaturan';
+    } else if (p.includes('/sistem') || p.includes('/kencana/manajemen')) {
+      pengaturan = '/app/sistem/pengaturan';
+    }
+
+    return { profile, pengaturan };
   }, [location.pathname]);
 
   // Build breadcrumb from pathname
