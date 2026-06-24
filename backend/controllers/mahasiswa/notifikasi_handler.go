@@ -1,6 +1,8 @@
 package mahasiswa
 
 import (
+	"strconv"
+	"math"
 	"siakad-backend/config"
 	"siakad-backend/models"
 	"time"
@@ -17,7 +19,7 @@ func getActualUserID(c *fiber.Ctx) (uint, error) {
 	return v, nil
 }
 
-// GetNotifications returns a list of notifications for the current student
+// GetNotifications returns a list of notifications for the current user (unified for all roles)
 func GetNotifications(c *fiber.Ctx) error {
 	UserID, err := getActualUserID(c)
 	if err != nil {
@@ -26,13 +28,29 @@ func GetNotifications(c *fiber.Ctx) error {
 
 	// Filters
 	tipe := c.Query("tipe")
-	waktu := c.Query("waktu")   // hari_ini, minggu_ini, bulan_ini
-	status := c.Query("status") // unread, read
+	module := c.Query("module")   // kencana, psikologi, ormawa, kesehatan, beasiswa, prestasi, student_voice, sistem
+	waktu := c.Query("waktu")     // hari_ini, minggu_ini, bulan_ini
+	status := c.Query("status")   // unread, read
+	
+	// Pagination
+	page, _ := strconv.Atoi(c.Query("page", "1"))
+	if page < 1 {
+		page = 1
+	}
+	limit, _ := strconv.Atoi(c.Query("limit", "20"))
+	if limit < 1 || limit > 100 {
+		limit = 20
+	}
+	offset := (page - 1) * limit
 
 	query := config.DB.Model(&models.Notifikasi{}).Where("user_id = ? AND created_at <= ?", UserID, time.Now())
 
 	if tipe != "" && tipe != "Semua" {
 		query = query.Where("tipe = ?", tipe)
+	}
+
+	if module != "" && module != "semua" {
+		query = query.Where("module = ?", module)
 	}
 
 	if status == "unread" {
@@ -54,13 +72,25 @@ func GetNotifications(c *fiber.Ctx) error {
 		query = query.Where("created_at >= ?", startOfMonth)
 	}
 
+	var total int64
+	query.Count(&total)
+
 	var notifs []models.Notifikasi
-	err = query.Order("created_at DESC").Find(&notifs).Error
+	err = query.Order("created_at DESC").Offset(offset).Limit(limit).Find(&notifs).Error
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{"success": false, "message": "Gagal mengambil notifikasi"})
 	}
 
-	return c.JSON(fiber.Map{"success": true, "data": notifs})
+	return c.JSON(fiber.Map{
+		"success": true, 
+		"data": notifs,
+		"metadata": fiber.Map{
+			"total": total,
+			"page": page,
+			"limit": limit,
+			"total_pages": int(math.Ceil(float64(total) / float64(limit))),
+		},
+	})
 }
 
 // GetUnreadCount returns the number of unread notifications

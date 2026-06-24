@@ -56,39 +56,39 @@ export default function PortalSidebar({ config, onNavigate }) {
 
     // Exact match (including query param if itemPath has it)
     if (itemPath.includes('?')) {
-      return (currentPath + location.search) === itemPath;
+      if ((currentPath + location.search) === itemPath) return true;
+    } else {
+      if (currentPath === itemPath) return true;
     }
-
-    if (currentPath === itemPath) return true;
 
     // Dashboard exact match
     if (itemPath === '/admin' || itemPath === '/ormawa' || itemPath === '/student/dashboard') {
       if (currentPath === itemPath) return true;
     }
 
-    // Subpath matching
-    if (currentPath.startsWith(itemPath) && itemPath !== '/') {
-      // Check if there's a more specific match
-      const allItems = config.menu.flatMap(g => g.items);
-      const moreSpecific = allItems.find(item =>
-        item.path !== itemPath &&
-        item.path.length > itemPath.length &&
-        currentPath.startsWith(item.path)
-      );
-      return !moreSpecific;
-    }
-
-    // Check if current path is under a submenu path
+    // Check if current path is under a submenu path FIRST
     if (hasSubmenu) {
       const submenuItem = config.menu.flatMap(g => g.items).find(i => i.hasSubmenu && i.path === itemPath);
       if (submenuItem?.submenu) {
-        return submenuItem.submenu.some(sub => {
+        const isActiveSub = submenuItem.submenu.some(sub => {
           if (sub.path.includes('?')) {
             return (currentPath + location.search) === sub.path;
           }
           return currentPath.startsWith(sub.path);
         });
+        if (isActiveSub) return true;
       }
+    }
+
+    // Subpath matching for non-submenu items
+    if (!hasSubmenu && currentPath.startsWith(itemPath) && itemPath !== '/') {
+      const allItems = config.menu.flatMap(g => g.items).flatMap(item => item.submenu ? [item, ...item.submenu] : [item]);
+      const moreSpecific = allItems.find(item =>
+        item.path !== itemPath &&
+        item.path.length > itemPath.length &&
+        currentPath.startsWith(item.path)
+      );
+      if (!moreSpecific) return true;
     }
 
     return false;

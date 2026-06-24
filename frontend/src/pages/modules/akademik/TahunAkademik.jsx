@@ -213,10 +213,7 @@ export default function TahunAkademikPage() {
         highlightedTitle="Akademik"
         subtitle="Konfigurasi semester aktif, serta buka/tutup portal pendaftaran beasiswa dan pengajuan aspirasi mahasiswa."
         icon="calendar_month"
-        badges={[
-          { label: 'Kalender Hub', active: false },
-          { label: `Siklus Aktif: ${current?.activeYear || 'IDLE'}`, active: true },
-        ]}
+
         actions={
           <div className="flex items-center gap-2">
             <Select value={filterPeriode} onValueChange={setFilterPeriode}>

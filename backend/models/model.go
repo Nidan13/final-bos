@@ -607,6 +607,7 @@ type Notifikasi struct {
 	Judul     string
 	Deskripsi string
 	Tipe      string
+	Module    string `gorm:"size:50;index;default:'sistem'" json:"module"` // kencana, psikologi, ormawa, kesehatan, beasiswa, prestasi, student_voice, sistem
 	IsRead    bool
 }
 

@@ -156,22 +156,22 @@ export default function AdminDashboard() {
 
   const statCards = [
     { title: 'Total Mahasiswa', value: (d.total_mahasiswa || 0).toLocaleString('id-ID'), icon: 'school', colorTheme: 'primary', route: '/app/akademik/mahasiswa', subtitle: 'Data mahasiswa terdaftar' },
-    { title: 'Total Dosen', value: (d.total_dosen || 0).toLocaleString('id-ID'), icon: 'supervisor_account', colorTheme: 'info', route: '/app/dashboard/lecturers', subtitle: 'Tenaga pengajar aktif' },
+    { title: 'Total Dosen', value: (d.total_dosen || 0).toLocaleString('id-ID'), icon: 'supervisor_account', colorTheme: 'info', route: '/app/akademik/dosen', subtitle: 'Tenaga pengajar aktif' },
     { title: 'Rerata IPK', value: (d.avg_ipk && d.avg_ipk > 0) ? d.avg_ipk.toFixed(2) : '—', icon: 'insights', colorTheme: 'success', route: '/app/akademik/mahasiswa', subtitle: 'IPK rata-rata mahasiswa aktif' },
-    { title: 'Aspirasi Aktif', value: d.aspirasi_aktif || 0, icon: 'chat', colorTheme: 'warning', route: '/app/dashboard/aspirations', subtitle: 'Menunggu respon' },
-    { title: 'SLA Overdue', value: d.sla_overdue || 0, icon: 'running_with_errors', colorTheme: 'error', route: '/app/dashboard/aspirations', subtitle: 'Melebihi tenggat',
+    { title: 'Aspirasi Aktif', value: d.aspirasi_aktif || 0, icon: 'chat', colorTheme: 'warning', route: '/app/kemahasiswaan/aspirasi', subtitle: 'Menunggu respon' },
+    { title: 'SLA Overdue', value: d.sla_overdue || 0, icon: 'running_with_errors', colorTheme: 'error', route: '/app/kemahasiswaan/aspirasi', subtitle: 'Melebihi tenggat',
       badgeText: (d.sla_overdue || 0) > 0 ? 'Kritis' : null,
     },
   ]
 
   const quickLinks = [
-    { label: 'Mahasiswa', icon: 'school', path: '/app/akademik/mahasiswa', iconBg: 'bg-[var(--theme-primary)]/10 border-[var(--theme-primary)]/20 text-[var(--theme-primary)]' },
-    { label: 'Fakultas', icon: 'business', path: '/app/dashboard/faculties', iconBg: 'bg-[var(--theme-secondary)]/10 border-[var(--theme-secondary)]/20 text-[var(--theme-secondary)]' },
-    { label: 'PMB', icon: 'group_add', path: '/app/dashboard/pmb', iconBg: 'bg-[var(--theme-info)]/10 border-[var(--theme-info)]/20 text-[var(--theme-info)]' },
-    { label: 'Kencana', icon: 'workspace_premium', path: '/app/dashboard/kencana-univ', iconBg: 'bg-[var(--theme-warning)]/10 border-[var(--theme-warning)]/20 text-[var(--theme-warning)]' },
-    { label: 'Proposal', icon: 'description', path: '/app/dashboard/proposals', iconBg: 'bg-[var(--theme-success)]/10 border-[var(--theme-success)]/20 text-[var(--theme-success)]' },
-    { label: 'Aspirasi', icon: 'chat', path: '/app/dashboard/aspirations', iconBg: 'bg-[var(--theme-error)]/10 border-[var(--theme-error)]/20 text-[var(--theme-error)]' },
-    { label: 'Beasiswa', icon: 'emoji_events', path: '/app/dashboard/scholarships', iconBg: 'bg-amber-500/10 border-amber-500/20 text-amber-500' },
+    { label: 'Mahasiswa', icon: 'school', path: '/app/akademik/mahasiswa' },
+    { label: 'Fakultas', icon: 'business', path: '/app/akademik/fakultas' },
+    { label: 'PMB', icon: 'group_add', path: '/app/akademik/pmb' },
+    { label: 'Kencana', icon: 'workspace_premium', path: '/app/kencana/dashboard' },
+    { label: 'Proposal', icon: 'description', path: '/app/ormawa/proposal' },
+    { label: 'Aspirasi', icon: 'chat', path: '/app/kemahasiswaan/aspirasi' },
+    { label: 'Beasiswa', icon: 'emoji_events', path: '/app/kemahasiswaan/beasiswa' },
   ]
 
   // Donut data for student status
@@ -276,11 +276,7 @@ export default function AdminDashboard() {
         highlightedTitle={`${user?.Nama?.split(' ')[0] || 'Admin'}!`}
         subtitle="Pusat kendali eksekutif Universitas Bhakti Kencana. Pantau seluruh operasional akademik, kemahasiswaan, dan administrasi dalam satu pandangan."
         icon="admin_panel_settings"
-        badges={[
-          { label: 'Super Admin Portal', active: false },
-          { label: academicSettings ? `${academicSettings.TahunAkademik} - ${academicSettings.Semester}` : 'Loading...', active: true },
-          filterTahunMasuk && filterTahunMasuk !== 'all' ? { label: `Angkatan ${filterTahunMasuk}`, active: true } : null,
-        ].filter(Boolean)}
+
         actions={
           <div className="flex items-center gap-2">
             <div className="relative">
@@ -331,21 +327,24 @@ export default function AdminDashboard() {
         {[
           { label: 'Aktif Hari Ini', value: d.active_users_today || 0, icon: 'person', color: 'var(--theme-success)' },
           { label: 'Selesai Hari Ini', value: d.resolved_today || 0, icon: 'check_circle', color: 'var(--theme-success)' },
-          { label: 'Organisasi', value: d.total_ormawa || 0, icon: 'groups', color: 'var(--theme-info)' },
-          { label: 'Peserta Kencana', value: d.total_peserta_kencana || 0, icon: 'workspace_premium', color: 'var(--theme-warning)' },
-          { label: 'Pendaftar PMB', value: (d.total_pmb || 0).toLocaleString('id-ID'), icon: 'group_add', color: 'var(--theme-primary)' },
-          { label: 'Mhs. Berisiko', value: d.at_risk_students || 0, icon: 'warning', color: 'var(--theme-error)' },
-        ].map((item, i) => (
-          <div key={i} className="bg-[var(--theme-surface)] border border-[var(--theme-border)] rounded-2xl p-4 flex items-center gap-3 hover:shadow-md hover:border-[var(--theme-primary-light)] transition-all duration-300 group">
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: `${item.color}15` }}>
-              <span className="material-symbols-outlined text-[20px] transition-transform group-hover:scale-110" style={{ color: item.color }}>{item.icon}</span>
+          { label: 'Organisasi', value: d.total_ormawa || 0, icon: 'groups', color: 'var(--theme-info)', path: '/app/ormawa/organisasi' },
+          { label: 'Peserta Kencana', value: d.total_peserta_kencana || 0, icon: 'workspace_premium', color: 'var(--theme-warning)', path: '/app/kencana/participants' },
+          { label: 'Pendaftar PMB', value: (d.total_pmb || 0).toLocaleString('id-ID'), icon: 'group_add', color: 'var(--theme-primary)', path: '/app/akademik/pmb' },
+          { label: 'Mhs. Berisiko', value: d.at_risk_students || 0, icon: 'warning', color: 'var(--theme-error)', path: '/app/akademik/mahasiswa?filter=berisiko' },
+        ].map((item, i) => {
+          const content = (
+            <div className={cn("bg-[var(--theme-surface)] border border-[var(--theme-border)] rounded-2xl p-4 flex items-center gap-3 transition-all duration-300 group", item.path ? "cursor-pointer hover:shadow-md hover:border-[var(--theme-primary-light)]" : "")}>
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: `${item.color}15` }}>
+                <span className="material-symbols-outlined text-[20px] transition-transform group-hover:scale-110" style={{ color: item.color }}>{item.icon}</span>
+              </div>
+              <div className="min-w-0">
+                <p className="text-lg font-black text-[var(--theme-text)] tabular-nums leading-none">{item.value}</p>
+                <p className="text-[9px] font-bold text-[var(--theme-text-muted)] uppercase tracking-wider mt-1 truncate">{item.label}</p>
+              </div>
             </div>
-            <div className="min-w-0">
-              <p className="text-lg font-black text-[var(--theme-text)] tabular-nums leading-none">{item.value}</p>
-              <p className="text-[9px] font-bold text-[var(--theme-text-muted)] uppercase tracking-wider mt-1 truncate">{item.label}</p>
-            </div>
-          </div>
-        ))}
+          )
+          return item.path ? <Link key={i} to={item.path}>{content}</Link> : <React.Fragment key={i}>{content}</React.Fragment>
+        })}
       </div>
 
       {/* ═══ ROW: TREN AKTIVITAS + STATUS DONUT ═══ */}

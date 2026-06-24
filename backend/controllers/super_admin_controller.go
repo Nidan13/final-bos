@@ -1896,6 +1896,12 @@ func GetAllStudents(c *fiber.Ctx) error {
 		query = query.Where("nama_mahasiswa ILIKE ? OR nim ILIKE ?", searchPattern, searchPattern)
 	}
 
+	// At-risk filter
+	isAtRisk := c.Query("is_at_risk")
+	if isAtRisk == "true" {
+		query = query.Where("status_akademik = ? AND ipk > 0 AND ipk < 2.0", "Aktif")
+	}
+
 	// Count total data before pagination
 	var totalData int64
 	query.Model(&models.Mahasiswa{}).Count(&totalData)

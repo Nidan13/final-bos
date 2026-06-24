@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useState, useEffect, useMemo, useRef } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { DataTable } from '@/components/ui/DataTable'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
@@ -349,7 +350,9 @@ export default function StudentDirectory() {
   const [pageSize, setPageSize] = useState(50)
   const [searchQuery, setSearchQuery] = useState('')
   const [totalStudents, setTotalStudents] = useState(0)
-  const [filterValues, setFilterValues] = useState({})
+  const [searchParams] = useSearchParams()
+  const initialFilter = searchParams.get('filter') === 'berisiko' ? { is_at_risk: 'true' } : {}
+  const [filterValues, setFilterValues] = useState(initialFilter)
   const [analyticsFilter, setAnalyticsFilter] = useState({ angkatan: 'all', statusAkun: 'all' })
   const [dashboardStats, setDashboardStats] = useState({
     total_data: 0,
@@ -365,6 +368,7 @@ export default function StudentDirectory() {
     at_risk: 0,
     data_anomaly_rate: 0,
     faculty_data: [],
+    status_dist: [],
     trend_data: [],
     faculty_ipk: [],
     top_sekolah: [],
@@ -385,6 +389,7 @@ export default function StudentDirectory() {
   const [isSyncingIpk, setIsSyncingIpk] = useState(false)
   const [syncProgress, setSyncProgress] = useState(null)
   const [hoveredFaculty, setHoveredFaculty] = useState(null)
+  const [showPassword, setShowPassword] = useState(false)
 
   const [activeTab, setActiveTab] = useState('profile')
   const [activeView, setActiveView] = useState('list')
@@ -2821,14 +2826,25 @@ export default function StudentDirectory() {
                 <Label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider ml-1 font-body">
                   {isEditMode ? 'New Password (Optional)' : 'Account Password'}
                 </Label>
-                <Input
-                  required={!isEditMode}
-                  type="password"
-                  value={form.password}
-                  onChange={e => setForm({ ...form, password: e.target.value })}
-                  placeholder={isEditMode ? "Leave blank to keep current..." : "Set password..."}
-                  className="h-11 rounded-xl border-slate-200 bg-slate-50/30 focus:bg-white font-semibold text-sm text-slate-800 focus:border-bku-primary font-body"
-                />
+                <div className="relative">
+                  <input
+                    required={!isEditMode}
+                    type={showPassword ? "text" : "password"}
+                    value={form.password}
+                    onChange={e => setForm({ ...form, password: e.target.value })}
+                    placeholder={isEditMode ? "Leave blank to keep current..." : "Set password..."}
+                    className="w-full h-11 px-4 pr-10 py-2.5 rounded-xl text-sm font-semibold text-slate-800 bg-slate-50/30 border border-slate-200 focus:bg-white focus:outline-none focus:border-bku-primary transition-all font-body"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-bku-primary transition-colors cursor-pointer"
+                  >
+                    <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>
+                      {showPassword ? 'visibility_off' : 'visibility'}
+                    </span>
+                  </button>
+                </div>
               </div>
             </div>
 

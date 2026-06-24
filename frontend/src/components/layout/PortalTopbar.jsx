@@ -461,7 +461,7 @@ export default function PortalTopbar({ config, onMenuClick }) {
   // Find menu group label
   const getMenuGroup = () => {
     if (!config || !config.menu) return '';
-    const allItems = config.menu.flatMap(g => g.items || []);
+    const allItems = config.menu.flatMap(g => g.items || []).flatMap(item => item.submenu ? [item, ...item.submenu] : [item]);
     const match = allItems.find(item => {
       if (item.path === location.pathname) return true;
       if (item.hasSubmenu && item.submenu?.some(s => s.path === location.pathname)) return true;
@@ -475,7 +475,7 @@ export default function PortalTopbar({ config, onMenuClick }) {
       return false;
     });
     if (match) {
-      const group = config.menu.find(g => (g.items || []).includes(match));
+      const group = config.menu.find(g => (g.items || []).some(i => i.path === match.path || (i.submenu && i.submenu.some(s => s.path === match.path))));
       return group?.group || '';
     }
     return '';

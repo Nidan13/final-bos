@@ -12,9 +12,33 @@ type KirimParams struct {
 	MahasiswaID uint
 	UserID      uint
 	Type        string // info, warning, success, error, referral
+	Module      string // kencana, psikologi, ormawa, kesehatan, beasiswa, prestasi, student_voice, sistem
 	Title       string
 	Content     string
 	Link        string
+}
+
+// inferModule auto-detects the module from the Type field if Module is not explicitly set.
+func inferModule(p KirimParams) string {
+	if p.Module != "" {
+		return p.Module
+	}
+	switch p.Type {
+	case "beasiswa":
+		return "beasiswa"
+	case "kencana":
+		return "kencana"
+	case "health", "referral_medis":
+		return "kesehatan"
+	case "prestasi", "achievement":
+		return "prestasi"
+	case "student_voice":
+		return "student_voice"
+	case "referral":
+		return "psikologi"
+	default:
+		return "sistem"
+	}
 }
 
 // Kirim sends a notification to a user via the general notifikasi table (DB + Async Email)
@@ -37,6 +61,7 @@ func Kirim(db *gorm.DB, params KirimParams) error {
 	notif := models.Notifikasi{
 		UserID:    finalUserID,
 		Tipe:      params.Type,
+		Module:    inferModule(params),
 		Judul:     params.Title,
 		Deskripsi: params.Content,
 		IsRead:    false,
@@ -55,11 +80,13 @@ func Kirim(db *gorm.DB, params KirimParams) error {
 }
 
 // KirimPsikolog mengirim notifikasi ke tabel psikolog.notifications (portal psikolog)
-// Digunakan saat SuperAdmin mengambil tindakan terhadap referral milik psikolog
+// JUGA menulis ke tabel sentral mahasiswa.notifikasi agar muncul di Global Notification Center.
 func KirimPsikolog(db *gorm.DB, psikologID, userID uint, tipe, judul, deskripsi string) error {
 	if psikologID == 0 || userID == 0 {
 		return fmt.Errorf("psikologID atau userID tidak valid: psikologID=%d userID=%d", psikologID, userID)
 	}
+
+	// 1. Write to legacy psikolog-specific table (backward compat)
 	notif := models.PsikologNotification{
 		PsikologID: psikologID,
 		UserID:     userID,
@@ -72,6 +99,16 @@ func KirimPsikolog(db *gorm.DB, psikologID, userID uint, tipe, judul, deskripsi 
 		log.Printf("[Notifikasi] Gagal simpan notif psikolog ID=%d: %v", psikologID, err)
 		return err
 	}
+
+	// 2. Also write to central notification table
+	_ = Kirim(db, KirimParams{
+		UserID:  userID,
+		Type:    tipe,
+		Module:  "psikologi",
+		Title:   judul,
+		Content: deskripsi,
+	})
+
 	log.Printf("[Notifikasi] Notif psikolog terkirim: psikologID=%d judul=%s", psikologID, judul)
 	return nil
 }

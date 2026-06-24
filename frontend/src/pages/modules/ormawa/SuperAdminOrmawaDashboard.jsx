@@ -89,10 +89,7 @@ export default function SuperAdminOrmawaDashboard() {
         highlightedTitle={selectedOrmawa?.Nama || selectedOrmawa?.Singkatan || 'Ormawa'}
         subtitle="Portal manajemen utama organisasi mahasiswa. Pantau agenda, kepatuhan LPJ, dan pengajuan dana."
         icon="corporate_fare"
-        badges={[
-          { label: 'Super Admin Portal', active: false },
-          { label: selectedOrmawa ? `ID: ${selectedOrmawaId}` : 'Sistem Aktif', active: true }
-        ]}
+
       />
 
       {/* Content - hanya tampil kalau sudah pilih ormawa */}

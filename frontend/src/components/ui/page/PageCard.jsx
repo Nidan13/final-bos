@@ -3,7 +3,7 @@ import { cn } from '../../../lib/utils';
 
 export function PageCard({ children, className, noPadding = false, ...props }) {
   return (
-    <div 
+    <div
       className={cn(
         "bg-gradient-to-br from-white to-slate-50/80 border border-slate-100/80 rounded-[1.25rem] shadow-[0_4px_20px_rgba(0,0,0,0.03)] transition-all duration-500 overflow-hidden relative",
         !noPadding && "p-5 sm:p-6",

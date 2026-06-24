@@ -53,55 +53,30 @@ export default function NotificationDropdown() {
   const isKencanaStaff = isKencanaAdmin || isKencanaFakultas || isKencanaMentor;
   const hasNotifications = true; // Enable notifications for all roles
 
-  // Polling strategy: check unread count every 30s
+  // Polling strategy: check unread count every 30s — unified endpoint
   const { data: unreadData } = useQuery({
-    queryKey: ['notifikasi', 'unread-count', role, ormawaId],
+    queryKey: ['notifikasi', 'unread-count'],
     queryFn: async () => {
-      if (isOrmawa) {
-        const { data } = await api.get(`/ormawa/notifications?ormawaId=${ormawaId}`);
-        const unreadCount = (data.data || []).filter(n => !(n.is_read ?? n.IsRead)).length;
-        return { count: unreadCount };
-      }
-      if (isPsychologist) {
-        const { data } = await api.get('/psychologist/notifications');
-        const unreadCount = (data.data || []).filter(n => n.unread !== undefined ? n.unread : !(n.is_read ?? n.IsRead)).length;
-        return { count: unreadCount };
-      }
-      if (isTenagaKesehatan) {
-        const { data } = await api.get('/tenagakes/notifikasi/unread-count');
-        return data;
-      }
       const { data } = await api.get('/notifikasi/unread-count');
       return data;
     },
     refetchInterval: 30000,
     refetchOnWindowFocus: true,
-    enabled: hasNotifications // Skip for super_admin
+    enabled: hasNotifications
   });
 
   const { data: notifData, isLoading } = useQuery({
-    queryKey: ['notifikasi', 'list-dropdown', role, ormawaId],
+    queryKey: ['notifikasi', 'list-dropdown'],
     queryFn: async () => {
-      let responseData = [];
-      if (isOrmawa) {
-        const { data } = await api.get(`/ormawa/notifications?ormawaId=${ormawaId}`);
-        responseData = data.data || [];
-      } else if (isPsychologist) {
-        const { data } = await api.get('/psychologist/notifications');
-        responseData = data.data || [];
-      } else if (isTenagaKesehatan) {
-        const { data } = await api.get('/tenagakes/notifikasi');
-        responseData = data.data || [];
-      } else {
-        const { data } = await api.get('/notifikasi');
-        responseData = data.data || [];
-      }
+      const { data } = await api.get('/notifikasi');
+      const responseData = data.data || [];
 
       return responseData.slice(0, 5).map(raw => {
         let defaultLink = raw.link ?? raw.Link ?? '';
         let hasCustomLink = !!defaultLink;
         if (!defaultLink) {
           const typeLower = (raw.tipe ?? raw.Tipe ?? raw.type ?? raw.Type ?? 'sistem').toLowerCase();
+          const moduleLower = (raw.module ?? raw.Module ?? 'sistem').toLowerCase();
           const text = (raw.title ?? raw.judul ?? raw.Judul ?? '') + ' ' + (raw.desc ?? raw.pesan ?? raw.Pesan ?? raw.deskripsi ?? raw.Deskripsi ?? '');
           const lowerText = text.toLowerCase();
 
@@ -112,17 +87,17 @@ export default function NotificationDropdown() {
               defaultLink = '/app/psikologi/referrals';
             } else if (typeLower === 'referral_medis') {
               defaultLink = '/app/kesehatan/referrals';
-            } else if (typeLower === 'beasiswa') {
-              defaultLink = '/admin/scholarships';
+            } else if (moduleLower === 'beasiswa') {
+              defaultLink = '/app/kemahasiswaan/beasiswa';
             } else if (typeLower === 'achievement' || typeLower === 'prestasi') {
               defaultLink = '/admin/achievements';
             } else if (typeLower === 'asuransi') {
               defaultLink = '/admin/insurance';
             } else if (typeLower === 'student_voice' || typeLower === 'aspirasi') {
               defaultLink = '/admin/aspirations';
-            } else if (typeLower === 'kencana') {
+            } else if (moduleLower === 'kencana') {
               defaultLink = '/admin/kencana-univ';
-            } else if (typeLower === 'ormawa' || typeLower === 'proposal') {
+            } else if (moduleLower === 'ormawa' || typeLower === 'proposal') {
               defaultLink = '/admin/ormawa-dashboard';
             } else {
               defaultLink = '/admin';
@@ -143,12 +118,8 @@ export default function NotificationDropdown() {
             } else {
               defaultLink = '/app/kesehatan/notifications';
             }
-          } else if (isKencanaAdmin) {
-            defaultLink = '/kencana-admin/notifications';
-          } else if (isKencanaFakultas) {
-            defaultLink = '/kencana-fakultas/notifications';
-          } else if (isKencanaMentor) {
-            defaultLink = '/kencana-mentor/notifications';
+          } else if (isKencanaStaff) {
+            defaultLink = '/app/kencana/notifications';
           } else { // Student
             if (typeLower === 'konseling' || typeLower === 'referral' || (typeLower === 'info' && lowerText.includes('rujukan psikolog'))) {
               defaultLink = '/student/counseling/history?tab=referrals';
@@ -167,7 +138,7 @@ export default function NotificationDropdown() {
                 defaultLink = '/student/kencana';
               }
             } else {
-              defaultLink = '/student/notifikasi';
+              defaultLink = '/app/notifications';
             }
           }
         }
@@ -180,6 +151,7 @@ export default function NotificationDropdown() {
           content: stripHtmlAndEntities(contentRaw),
           originalContent: contentRaw,
           type: (raw.tipe ?? raw.Tipe ?? raw.type ?? raw.Type ?? 'sistem').toLowerCase(),
+          module: (raw.module ?? raw.Module ?? 'sistem').toLowerCase(),
           is_read: raw.unread !== undefined ? !raw.unread : (raw.is_read ?? raw.IsRead ?? false),
           created_at: raw.created_at ?? raw.CreatedAt,
           link: defaultLink,
@@ -192,50 +164,24 @@ export default function NotificationDropdown() {
         };
       });
     },
-    enabled: isOpen && hasNotifications // Only load when open AND role has notifications
+    enabled: isOpen && hasNotifications
   });
 
   const markReadMutation = useMutation({
     mutationFn: async (notifId) => {
-      if (isOrmawa) {
-        await api.put(`/ormawa/notifications/${notifId}/read`);
-      } else if (isPsychologist) {
-        await api.put(`/psychologist/notifications/${notifId}/read`);
-      } else if (isTenagaKesehatan) {
-        await api.put(`/tenagakes/notifikasi/${notifId}/baca`);
-      } else {
-        await api.put(`/notifikasi/${notifId}/baca`);
-      }
+      await api.put(`/notifikasi/${notifId}/baca`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries(['notifikasi']);
-      if (isOrmawa) {
-        window.dispatchEvent(new Event('ormawa_notifications_updated'));
-      } else if (isPsychologist) {
-        window.dispatchEvent(new Event('psychologist_notifications_updated'));
-      }
+      queryClient.invalidateQueries({ queryKey: ['notifikasi'] });
     }
   });
 
   const markAllReadMutation = useMutation({
     mutationFn: async () => {
-      if (isOrmawa) {
-        await api.put(`/ormawa/notifications/read-all?ormawaId=${ormawaId}`);
-      } else if (isPsychologist) {
-        await api.put(`/psychologist/notifications/read-all`);
-      } else if (isTenagaKesehatan) {
-        await api.put('/tenagakes/notifikasi/baca-semua');
-      } else {
-        await api.put('/notifikasi/baca-semua');
-      }
+      await api.put('/notifikasi/baca-semua');
     },
     onSuccess: () => {
-      queryClient.invalidateQueries(['notifikasi']);
-      if (isOrmawa) {
-        window.dispatchEvent(new Event('ormawa_notifications_updated'));
-      } else if (isPsychologist) {
-        window.dispatchEvent(new Event('psychologist_notifications_updated'));
-      }
+      queryClient.invalidateQueries({ queryKey: ['notifikasi'] });
     }
   });
 

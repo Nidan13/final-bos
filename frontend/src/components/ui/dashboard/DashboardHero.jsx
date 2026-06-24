@@ -7,11 +7,11 @@ export function DashboardHero({
   highlightedTitle,
   subtitle,
   icon = 'admin_panel_settings',
-  badges = [], 
-  breadcrumbs = [], 
-  actions, 
+  badges = [],
+  breadcrumbs = [],
+  actions,
   className,
-  compact = false 
+  compact = false
 }) {
   return (
     <section
@@ -27,11 +27,11 @@ export function DashboardHero({
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         {/* Subtle Gradient Backdrop */}
         <div className="absolute inset-0 bg-gradient-to-br from-[var(--theme-primary)]/5 via-transparent to-[var(--theme-primary)]/5 opacity-50" />
-        
+
         {/* Decorative Blurred Blobs (Positioned Absolutely without affecting layout flow) */}
         <div className="absolute -top-24 -right-24 w-64 h-64 bg-gradient-to-br from-[var(--theme-primary)]/20 to-transparent rounded-full blur-3xl opacity-60 mix-blend-multiply group-hover/hero:opacity-80 transition-opacity duration-700" />
         <div className="absolute -bottom-24 -left-24 w-48 h-48 bg-gradient-to-tr from-[var(--theme-primary)]/10 to-transparent rounded-full blur-2xl opacity-40 mix-blend-multiply" />
-        
+
         {/* Optional Noise Texture (if applicable in project, simulated via radial gradient) */}
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(0,0,0,0.01)_100%)]" />
       </div>
@@ -42,10 +42,10 @@ export function DashboardHero({
         compact ? "p-5 md:p-6" : "p-6 md:p-8 lg:p-10",
         "justify-between lg:items-center"
       )}>
-        
+
         {/* Left Section: Info */}
         <div className="flex flex-col gap-4 max-w-3xl">
-          
+
           {/* Breadcrumbs */}
           {breadcrumbs && breadcrumbs.length > 0 && (
             <nav className="flex flex-wrap items-center gap-1.5" aria-label="Breadcrumb">
@@ -54,8 +54,8 @@ export function DashboardHero({
                 return (
                   <React.Fragment key={idx}>
                     {crumb.path && !isLast ? (
-                      <Link 
-                        to={crumb.path} 
+                      <Link
+                        to={crumb.path}
                         className="text-[10px] md:text-[11px] font-bold text-[var(--theme-text-muted)] uppercase tracking-widest hover:text-[var(--theme-primary)] transition-colors truncate max-w-[150px] md:max-w-[200px]"
                       >
                         {crumb.label}
@@ -105,27 +105,7 @@ export function DashboardHero({
                   {title} {highlightedTitle && <span className="text-[var(--theme-primary)]">{highlightedTitle}</span>}
                 </h1>
 
-                {/* Badges */}
-                {badges && badges.length > 0 && (
-                  <div className="flex flex-wrap items-center gap-2 mt-1 sm:mt-0">
-                    {badges.map((badge, idx) => (
-                      <span key={idx} className={cn(
-                        "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[9px] sm:text-[10px] font-bold uppercase tracking-wider border shadow-sm backdrop-blur-sm",
-                        badge.active
-                          ? "bg-[var(--theme-success)]/10 text-[var(--theme-success)] border-[var(--theme-success)]/20"
-                          : "bg-[var(--theme-primary)]/10 text-[var(--theme-primary)] border-[var(--theme-primary)]/20"
-                      )}>
-                        {badge.active && (
-                          <span className="relative flex h-1.5 w-1.5">
-                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--theme-success)] opacity-75"></span>
-                            <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-[var(--theme-success)]"></span>
-                          </span>
-                        )}
-                        {badge.label}
-                      </span>
-                    ))}
-                  </div>
-                )}
+
               </div>
 
               {/* Subtitle */}

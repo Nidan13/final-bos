@@ -364,10 +364,7 @@ export default function TenagaKesehatanDashboardPage() {
         highlightedTitle="Tenaga Medis"
         subtitle="Analisis data kunjungan klinik, skrining kesehatan mahasiswa, performa pelayanan medis, serta pengelolaan operasional."
         icon="analytics"
-        badges={[
-          { label: 'Akses Validasi', active: false },
-          { label: 'Super Admin Portal', active: true }
-        ]}
+
         actions={
             <SelectField
               value={activeFilters.periodId || 'all'}

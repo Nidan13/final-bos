@@ -648,6 +648,7 @@ export const adminService = {
     if (filters.FakultasID && filters.FakultasID !== 'all') params.append('fakultasId', filters.FakultasID)
     if (filters.ProgramStudiID && filters.ProgramStudiID !== 'all') params.append('prodiId', filters.ProgramStudiID)
     if (filters.StatusAkun && filters.StatusAkun !== 'all') params.append('statusAkun', filters.StatusAkun)
+    if (filters.is_at_risk === 'true') params.append('is_at_risk', 'true')
     return fetchWithAuth(`${API_BASE_URL}/admin/students?${params.toString()}`)
   },
   getStudentStats: (params = {}) => {

@@ -66,7 +66,7 @@ const AssessmentManagement = React.lazy(() => import('@/pages/modules/psikologi/
 const AnalyticsTrends = React.lazy(() => import('@/pages/modules/psikologi/AnalyticsTrends'));
 const ReferralManagement = React.lazy(() => import('@/pages/modules/psikologi/ReferralManagement'));
 const PsychologistSettings = React.lazy(() => import('@/pages/modules/psikologi/PsychologistSettings'));
-const PsikologNotifications = React.lazy(() => import('@/pages/modules/psikologi/NotificationsCenter'));
+const GlobalNotifications = React.lazy(() => import('@/pages/modules/core/GlobalNotifications'));
 
 // Kesehatan
 const TenagaKesehatanDashboard = React.lazy(() => import('@/pages/modules/kesehatan/TenagaKesehatanDashboard'));
@@ -80,7 +80,7 @@ const InsuranceReview = React.lazy(() => import('@/pages/modules/kesehatan/Insur
 const TenagaKesehatanReferral = React.lazy(() => import('@/pages/modules/kesehatan/ReferralManagement'));
 const BAPManagement = React.lazy(() => import('@/pages/modules/kesehatan/BAPManagement'));
 const ReportsPage = React.lazy(() => import('@/pages/modules/kesehatan/ReportsPage'));
-const TenagaKesehatanNotifications = React.lazy(() => import('@/pages/modules/kesehatan/NotificationsCenter'));
+// TenagaKesehatanNotifications → merged into GlobalNotifications
 
 // Kencana
 const KencanaAdminDashboard = React.lazy(() => import('@/pages/modules/kencana/admin/Dashboard'));
@@ -96,7 +96,7 @@ const KencanaAdminCertificates = React.lazy(() => import('@/pages/modules/kencan
 const KencanaAdminBanding = React.lazy(() => import('@/pages/modules/kencana/admin/Banding'));
 const KencanaAdminGroups = React.lazy(() => import('@/pages/modules/kencana/admin/Groups'));
 const KencanaAdminMentors = React.lazy(() => import('@/pages/modules/kencana/admin/Mentors'));
-const KencanaAdminNotifications = React.lazy(() => import('@/pages/modules/kencana/admin/Notifications'));
+// KencanaAdminNotifications → merged into GlobalNotifications
 const KencanaFacultyMonitoring = React.lazy(() => import('@/pages/modules/kencana/admin/FacultyMonitoring'));
 const KencanaCertificateSettings = React.lazy(() => import('@/pages/modules/kencana/admin/CertificateSettings'));
 const CertificateViewer = React.lazy(() => import('@/pages/modules/kencana/admin/CertificateViewer'));
@@ -131,7 +131,7 @@ const AchievementPage = React.lazy(() => import('@/pages/modules/student/Achieve
 const OrganisasiPage = React.lazy(() => import('@/pages/modules/student/OrganisasiPage'));
 const StudentVoicePage = React.lazy(() => import('@/pages/modules/student/StudentVoicePage'));
 const StudentVoiceDetailPage = React.lazy(() => import('@/pages/modules/student/StudentVoiceDetailPage'));
-const NotificationPage = React.lazy(() => import('@/pages/modules/student/NotificationPage'));
+// NotificationPage → merged into GlobalNotifications
 const PresensiPage = React.lazy(() => import('@/pages/modules/student/PresensiPage'));
 const KencanaTimelinePage = React.lazy(() => import('@/pages/modules/student/kencana/KencanaTimelinePage'));
 const KencanaStagePage = React.lazy(() => import('@/pages/modules/student/kencana/KencanaStagePage'));
@@ -256,12 +256,12 @@ export default function AppRoutes() {
       <Route path="psikologi/assessment" element={<Guarded perm={P.PSIKOLOGI_ASSESSMENT_VIEW}><AssessmentManagement /></Guarded>} />
       <Route path="psikologi/analytics" element={<Guarded perm={P.PSIKOLOGI_REPORT_VIEW}><AnalyticsTrends /></Guarded>} />
       <Route path="psikologi/referrals" element={<Guarded perm={P.PSIKOLOGI_REFERRAL_VIEW}><ReferralManagement /></Guarded>} />
-      <Route path="psikologi/notifications" element={<Guarded perm={P.PSIKOLOGI_DASHBOARD_VIEW}><PsikologNotifications /></Guarded>} />
+      <Route path="psikologi/notifications" element={<Guarded perm={P.PSIKOLOGI_DASHBOARD_VIEW}><GlobalNotifications /></Guarded>} />
       <Route path="psikologi/settings" element={<PsychologistSettings />} />
 
       {/* ─── Kesehatan ─── */}
       <Route path="kesehatan/dashboard" element={<Guarded perm={P.KESEHATAN_DASHBOARD_VIEW}><TenagaKesehatanDashboard /></Guarded>} />
-      <Route path="kesehatan/notifications" element={<TenagaKesehatanNotifications />} />
+      <Route path="kesehatan/notifications" element={<GlobalNotifications />} />
       <Route path="kesehatan/list" element={<Guarded perm={P.KESEHATAN_VIEW}><AdminTenagaKesehatanList /></Guarded>} />
       <Route path="kesehatan/bookings" element={<Guarded perm={P.KESEHATAN_BOOKING_VIEW}><TenagaKesehatanBooking /></Guarded>} />
       <Route path="kesehatan/schedule" element={<Guarded perm={P.KESEHATAN_SCHEDULE_VIEW}><TenagaKesehatanSchedule /></Guarded>} />
@@ -295,7 +295,7 @@ export default function AppRoutes() {
       <Route path="kencana/groups" element={<Guarded perm={P.KENCANA_GROUP_VIEW}><KencanaAdminGroups /></Guarded>} />
       <Route path="kencana/mentors" element={<Guarded perm={P.KENCANA_MENTOR_VIEW}><KencanaAdminMentors /></Guarded>} />
       <Route path="kencana/faculty-monitoring" element={<Guarded perm={P.KENCANA_FACULTY_VIEW}><KencanaFacultyMonitoring /></Guarded>} />
-      <Route path="kencana/notifications" element={<Guarded perm={P.KENCANA_DASHBOARD_VIEW}><KencanaAdminNotifications /></Guarded>} />
+      <Route path="kencana/notifications" element={<Guarded perm={P.KENCANA_DASHBOARD_VIEW}><GlobalNotifications /></Guarded>} />
 
       {/* Admin Fakultas Specific Sub-routes */}
       <Route path="kencana/faculty/announcements" element={<Guarded perm={P.KENCANA_FACULTY_VIEW}><KencanaAdminAnnouncements portal="fakultas" /></Guarded>} />
@@ -305,7 +305,7 @@ export default function AppRoutes() {
       <Route path="kencana/faculty/certificates" element={<Guarded perm={P.KENCANA_FACULTY_VIEW}><KencanaAdminCertificates portalType="fakultas" /></Guarded>} />
       <Route path="kencana/faculty/groups" element={<Guarded perm={P.KENCANA_FACULTY_VIEW}><KencanaAdminGroups portal="fakultas" /></Guarded>} />
       <Route path="kencana/faculty/mentors" element={<Guarded perm={P.KENCANA_FACULTY_VIEW}><KencanaAdminMentors portal="fakultas" /></Guarded>} />
-      <Route path="kencana/faculty/notifications" element={<Guarded perm={P.KENCANA_FACULTY_VIEW}><KencanaAdminNotifications portalType="fakultas" /></Guarded>} />
+      <Route path="kencana/faculty/notifications" element={<Guarded perm={P.KENCANA_FACULTY_VIEW}><GlobalNotifications /></Guarded>} />
 
 
       {/* Kencana Mentor */}
@@ -322,7 +322,7 @@ export default function AppRoutes() {
       <Route path="kencana/mentor/notes" element={<Guarded perm={P.KENCANA_MENTOR_STUDENTS}><KencanaMentorTaskPage /></Guarded>} />
       <Route path="kencana/mentor/notes/:id" element={<Guarded perm={P.KENCANA_MENTOR_STUDENTS}><KencanaMentorNotesPage /></Guarded>} />
       <Route path="kencana/mentor/scoring" element={<Guarded perm={P.KENCANA_MENTOR_STUDENTS}><KencanaMentorTaskPage /></Guarded>} />
-      <Route path="kencana/mentor/notifications" element={<Guarded perm={P.KENCANA_MENTOR_STUDENTS}><KencanaAdminNotifications portalType="mentor" /></Guarded>} />
+      <Route path="kencana/mentor/notifications" element={<Guarded perm={P.KENCANA_MENTOR_STUDENTS}><GlobalNotifications /></Guarded>} />
 
       {/* ─── Laporan ─── */}
       <Route path="laporan/fakultas" element={<Guarded perm={P.REPORT_VIEW}><Laporan /></Guarded>} />
@@ -343,7 +343,7 @@ export default function AppRoutes() {
       <Route path="sistem/audit" element={<Guarded perm={P.AUDIT_VIEW}><AuditLog /></Guarded>} />
 
       {/* ─── Core / Shared ─── */}
-      <Route path="notifications" element={<NotificationPage />} />
+      <Route path="notifications" element={<GlobalNotifications />} />
       <Route path="profile" element={<AdminProfile />} />
     </>
   );

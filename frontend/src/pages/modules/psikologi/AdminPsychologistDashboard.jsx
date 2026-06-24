@@ -346,10 +346,7 @@ export default function PsychologistDashboard() {
         highlightedTitle="Psikologi"
         subtitle="Analisis data booking konseling, beban kerja psikolog, dan statistik performa layanan bimbingan mahasiswa."
         icon="analytics"
-        badges={[
-          { label: 'Akses Validasi', active: false },
-          { label: 'Super Admin Portal', active: true }
-        ]}
+
         actions={
             <SelectField
               value={activeFilters.periodId || 'all'}
